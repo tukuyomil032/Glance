@@ -11,7 +11,13 @@ import SwiftUI
 struct glanceApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            OnboardingView()
+        }
+        .defaultSize(width: 540, height: 420)
+        .windowResizability(.contentSize)
+
+        Settings {
+            SettingsView()
         }
     }
 }
