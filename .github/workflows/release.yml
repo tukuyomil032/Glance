@@ -1,0 +1,152 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-26-arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.3.app/Contents/Developer
+
+      - name: Extract version
+        id: version
+        run: |
+          VERSION=$(awk '/MARKETING_VERSION/ { gsub(/[; \t]/, "", $3); print $3; exit }' \
+                    glance.xcodeproj/project.pbxproj)
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Detected version: ${VERSION}"
+
+      - name: Check if tag already exists
+        id: tag_check
+        run: |
+          if git ls-remote --tags origin "refs/tags/${{ steps.version.outputs.tag }}" | grep -q .; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Tag ${{ steps.version.outputs.tag }} already exists — skipping release."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Tag ${{ steps.version.outputs.tag }} not found — proceeding with release."
+          fi
+
+      - name: Build arm64 archive
+        if: steps.tag_check.outputs.exists == 'false'
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -project glance.xcodeproj \
+            -scheme glance \
+            -configuration Release \
+            -archivePath build/glance-arm64.xcarchive \
+            -destination 'generic/platform=macOS' \
+            ARCHS=arm64 \
+            ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            SKIP_INSTALL=NO 2>&1 | xcpretty
+
+      - name: Build x86_64 archive
+        if: steps.tag_check.outputs.exists == 'false'
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -project glance.xcodeproj \
+            -scheme glance \
+            -configuration Release \
+            -archivePath build/glance-x86_64.xcarchive \
+            -destination 'generic/platform=macOS' \
+            ARCHS=x86_64 \
+            ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            SKIP_INSTALL=NO 2>&1 | xcpretty
+
+      - name: Build universal archive
+        if: steps.tag_check.outputs.exists == 'false'
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -project glance.xcodeproj \
+            -scheme glance \
+            -configuration Release \
+            -archivePath build/glance-universal.xcarchive \
+            -destination 'generic/platform=macOS' \
+            "ARCHS=arm64 x86_64" \
+            ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            SKIP_INSTALL=NO 2>&1 | xcpretty
+
+      - name: Create DMGs
+        if: steps.tag_check.outputs.exists == 'false'
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          mkdir -p build/dmg
+
+          for ARCH in arm64 x86_64 universal; do
+            APP="build/glance-${ARCH}.xcarchive/Products/Applications/glance.app"
+            STAGING="build/dmg-staging-${ARCH}"
+            mkdir -p "$STAGING"
+            cp -R "$APP" "$STAGING/glance.app"
+
+            hdiutil create \
+              -volname "glance" \
+              -srcfolder "$STAGING" \
+              -ov \
+              -format UDZO \
+              "build/dmg/glance-${VERSION}-${ARCH}.dmg"
+
+            echo "Created: glance-${VERSION}-${ARCH}.dmg"
+          done
+
+      - name: Create and push tag
+        if: steps.tag_check.outputs.exists == 'false'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "${{ steps.version.outputs.tag }}"
+          git push origin "${{ steps.version.outputs.tag }}"
+
+      - name: Create GitHub Release
+        if: steps.tag_check.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: glance ${{ steps.version.outputs.tag }}
+          draft: false
+          prerelease: false
+          body: |
+            ## glance ${{ steps.version.outputs.tag }}
+
+            Quick Look Markdown preview extension for macOS.
+
+            ### Downloads
+            | File | Architecture |
+            |------|--------------|
+            | `glance-${{ steps.version.outputs.version }}-universal.dmg` | Apple Silicon + Intel (recommended) |
+            | `glance-${{ steps.version.outputs.version }}-arm64.dmg` | Apple Silicon only |
+            | `glance-${{ steps.version.outputs.version }}-x86_64.dmg` | Intel only |
+
+            ### Install
+            1. Open the DMG and drag glance.app to Applications
+            2. Launch glance.app once to register the Quick Look extension
+            3. Press Space on any `.md` file in Finder
+          files: |
+            build/dmg/glance-${{ steps.version.outputs.version }}-arm64.dmg
+            build/dmg/glance-${{ steps.version.outputs.version }}-x86_64.dmg
+            build/dmg/glance-${{ steps.version.outputs.version }}-universal.dmg
