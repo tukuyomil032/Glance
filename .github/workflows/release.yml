@@ -114,6 +114,54 @@ jobs:
             echo "Created: glance-${VERSION}-${ARCH}.dmg"
           done
 
+      - name: Install Sparkle tools
+        if: steps.tag_check.outputs.exists == 'false'
+        run: brew install sparkle
+
+      - name: Sign DMGs and generate appcast
+        if: steps.tag_check.outputs.exists == 'false'
+        env:
+          SPARKLE_EDDSA_KEY: ${{ secrets.SPARKLE_EDDSA_KEY }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          DATE=$(date -R)
+
+          UNIVERSAL_DMG="build/dmg/glance-${VERSION}-universal.dmg"
+          UNIVERSAL_SIG=$(echo "$SPARKLE_EDDSA_KEY" | sign_update "$UNIVERSAL_DMG" --ed-key-file - 2>/dev/null || echo "PLACEHOLDER")
+          UNIVERSAL_SIZE=$(stat -f%z "$UNIVERSAL_DMG")
+
+          cat > appcast.xml << APPCAST_EOF
+          <?xml version="1.0" encoding="utf-8"?>
+          <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
+            <channel>
+              <title>glance Updates</title>
+              <link>https://github.com/tukuyomil032/glance</link>
+              <description>Appcast feed for glance updates</description>
+              <language>en</language>
+              <item>
+                <title>Version ${VERSION}</title>
+                <pubDate>${DATE}</pubDate>
+                <sparkle:version>${VERSION}</sparkle:version>
+                <sparkle:shortVersionString>${VERSION}</sparkle:shortVersionString>
+                <sparkle:minimumSystemVersion>12.0</sparkle:minimumSystemVersion>
+                <enclosure url="https://github.com/tukuyomil032/glance/releases/download/v${VERSION}/glance-${VERSION}-universal.dmg"
+                           type="application/octet-stream"
+                           sparkle:edSignature="${UNIVERSAL_SIG}"
+                           length="${UNIVERSAL_SIZE}" />
+              </item>
+            </channel>
+          </rss>
+          APPCAST_EOF
+
+      - name: Commit appcast.xml
+        if: steps.tag_check.outputs.exists == 'false'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add appcast.xml
+          git diff --cached --quiet && echo "No appcast changes" || git commit -m "chore: update appcast for v${{ steps.version.outputs.version }}"
+          git push origin HEAD:main || true
+
       - name: Create and push tag
         if: steps.tag_check.outputs.exists == 'false'
         run: |
