@@ -10,7 +10,7 @@ Finder で `.md` ファイルを選択し Space キーで Quick Look を起動�
 - **UI Framework**: SwiftUI (macOS app) + WKWebView (preview rendering)
 - **Build System**: Xcode project (glance.xcodeproj)
 - **Minimum Deployment**: macOS 12.0+
-- **Markdown Parser**: cmark (swift-cmark SPM package)
+- **Markdown Parser**: Ink (JohnSundell/Ink, SPM) — GFM対応のPure Swiftパーサー
 - **Quick Look API**: QLPreviewingController (Quartz framework)
 
 ## Project Structure
@@ -27,7 +27,7 @@ glance/
 │   ├── PreviewViewController.swift  # QLPreviewingController implementation
 │   └── Info.plist                   # UTType declarations
 ├── Shared/                          # Shared code (both targets)
-│   ├── MarkdownRenderer.swift       # cmark wrapper
+│   ├── MarkdownRenderer.swift       # Ink wrapper (Markdown → HTML)
 │   ├── HTMLTemplate.swift           # HTML + CSS template generation
 │   └── PreviewPreferences.swift     # App Group UserDefaults
 ├── glanceTests/
@@ -54,7 +54,7 @@ xcodebuild -project glance.xcodeproj -scheme glance -configuration Debug test
 ## Key Architecture Decisions
 
 1. **WKWebView for rendering** — NSAttributedString では table / code block / blockquote の表現力が不足するため
-2. **cmark (swift-cmark)** — Apple 公式の CommonMark パーサー。外部依存最小限
+2. **Ink (JohnSundell/Ink)** — Pure Swift GFM パーサー。sandbox 安全・テーブル/タスクリスト/打ち消し線対応
 3. **CSS custom properties + prefers-color-scheme** — dark mode 自動対応
 4. **App Group UserDefaults** — main app ↔ extension 間の設定共有
 5. **QLPreviewingController** — macOS 12+ の Quick Look extension API

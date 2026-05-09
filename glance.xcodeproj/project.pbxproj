@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		BA60C2572FAEF3570021BD5D /* glanceQLExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = BA60C2502FAEF3570021BD5D /* glanceQLExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		BA70D0012FB0000100000003 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = BA70D0012FB0000100000002 /* Sparkle */; };
+		BA70D0022FB0000200000003 /* Ink in Frameworks */ = {isa = PBXBuildFile; productRef = BA70D0022FB0000200000002 /* Ink */; };
+		BA70D0022FB0000200000005 /* Ink in Frameworks */ = {isa = PBXBuildFile; productRef = BA70D0022FB0000200000004 /* Ink */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -103,6 +105,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				BA70D0012FB0000100000003 /* Sparkle in Frameworks */,
+				BA70D0022FB0000200000003 /* Ink in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -124,6 +127,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BA70D0022FB0000200000005 /* Ink in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -177,6 +181,7 @@
 			name = glance;
 			packageProductDependencies = (
 				BA70D0012FB0000100000002 /* Sparkle */,
+				BA70D0022FB0000200000002 /* Ink */,
 			);
 			productName = glance;
 			productReference = BA60C2202FAEF3540021BD5D /* glance.app */;
@@ -246,6 +251,7 @@
 			);
 			name = glanceQLExtension;
 			packageProductDependencies = (
+				BA70D0022FB0000200000004 /* Ink */,
 			);
 			productName = glanceQLExtension;
 			productReference = BA60C2502FAEF3570021BD5D /* glanceQLExtension.appex */;
@@ -288,6 +294,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				BA70D0012FB0000100000001 /* XCRemoteSwiftPackageReference "Sparkle" */,
+				BA70D0022FB0000200000001 /* XCRemoteSwiftPackageReference "Ink" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = BA60C2212FAEF3540021BD5D /* Products */;
@@ -642,6 +649,7 @@
 		BA60C25B2FAEF3570021BD5D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = glanceQLExtension/glanceQLExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = Q9CTDZWWR9;
@@ -670,6 +678,7 @@
 		BA60C25C2FAEF3570021BD5D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = glanceQLExtension/glanceQLExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = Q9CTDZWWR9;
@@ -754,6 +763,14 @@
 				minimumVersion = 2.0.0;
 			};
 		};
+		BA70D0022FB0000200000001 /* XCRemoteSwiftPackageReference "Ink" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/JohnSundell/Ink";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.5.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -761,6 +778,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = BA70D0012FB0000100000001 /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
+		};
+		BA70D0022FB0000200000002 /* Ink */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BA70D0022FB0000200000001 /* XCRemoteSwiftPackageReference "Ink" */;
+			productName = Ink;
+		};
+		BA70D0022FB0000200000004 /* Ink */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BA70D0022FB0000200000001 /* XCRemoteSwiftPackageReference "Ink" */;
+			productName = Ink;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
