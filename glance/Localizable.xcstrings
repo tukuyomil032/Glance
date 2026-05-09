@@ -1,0 +1,216 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "General" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一般"
+          }
+        }
+      }
+    },
+    "Language" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "言語"
+          }
+        }
+      }
+    },
+    "System Default" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "システムデフォルト"
+          }
+        }
+      }
+    },
+    "Font Size" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文字サイズ"
+          }
+        }
+      }
+    },
+    "How to Use" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使い方"
+          }
+        }
+      }
+    },
+    "Just select a Markdown file in Finder and press Space. It shows a formatted preview." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finder で Markdown ファイルを選択して Space を押すだけ。書式付きプレビューを表示します。"
+          }
+        }
+      }
+    },
+    "Large" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "大"
+          }
+        }
+      }
+    },
+    "Launch glance.app once (first time only)" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "glance.app を1度起動する（初回のみ）"
+          }
+        }
+      }
+    },
+    "Markdown Quick Look Preview" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markdown Quick Look Preview"
+          }
+        }
+      }
+    },
+    "Max Width" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最大幅"
+          }
+        }
+      }
+    },
+    "Medium" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "中"
+          }
+        }
+      }
+    },
+    "Open System Settings > Extensions" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "システム設定 > 機能拡張 を開く"
+          }
+        }
+      }
+    },
+    "Press Space to preview" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Space キーを押してプレビュー"
+          }
+        }
+      }
+    },
+    "Preview" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プレビュー"
+          }
+        }
+      }
+    },
+    "Select a .md file in Finder" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finder で .md ファイルを選択"
+          }
+        }
+      }
+    },
+    "Small" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小"
+          }
+        }
+      }
+    },
+    "Updates" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アップデート"
+          }
+        }
+      }
+    },
+    "Check for Updates" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アップデートを確認"
+          }
+        }
+      }
+    },
+    "Check for updates automatically" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動でアップデートを確認"
+          }
+        }
+      }
+    },
+    "Check for Updates..." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アップデートを確認..."
+          }
+        }
+      }
+    },
+    "Version %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "バージョン %@"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

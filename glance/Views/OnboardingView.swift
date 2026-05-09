@@ -27,7 +27,7 @@ struct OnboardingView: View {
             .padding(.bottom, 20)
 
             // Description
-            Text("Finder で Markdown ファイルを選択して Space を押すだけ。書式付きプレビューを表示します。")
+            Text("Just select a Markdown file in Finder and press Space. It shows a formatted preview.")
                 .font(.body)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
@@ -39,13 +39,13 @@ struct OnboardingView: View {
 
             // Steps
             VStack(alignment: .leading, spacing: 14) {
-                Text("使い方")
+                Text("How to Use")
                     .font(.headline)
                     .padding(.bottom, 2)
 
-                StepRow(number: 1, text: "glance.app を1度起動する（初回のみ）")
-                StepRow(number: 2, text: "Finder で .md ファイルを選択")
-                StepRow(number: 3, text: "Space キーを押してプレビュー")
+                StepRow(number: 1, text: "Launch glance.app once (first time only)")
+                StepRow(number: 2, text: "Select a .md file in Finder")
+                StepRow(number: 3, text: "Press Space to preview")
             }
             .padding(.horizontal, 48)
             .padding(.vertical, 20)
@@ -59,7 +59,7 @@ struct OnboardingView: View {
                     NSWorkspace.shared.open(url)
                 }
             } label: {
-                Label("システム設定 > 機能拡張 を開く", systemImage: "arrow.up.right.square")
+                Label("Open System Settings > Extensions", systemImage: "arrow.up.right.square")
                     .font(.callout)
             }
             .buttonStyle(.plain)
