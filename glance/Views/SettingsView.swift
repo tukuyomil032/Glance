@@ -8,16 +8,41 @@
 import SwiftUI
 
 struct SettingsView: View {
+    @Binding var appLocale: Locale
+    @ObservedObject var updaterViewModel: UpdaterViewModel
     @State private var fontSize: Int = PreviewPreferences.load().fontSize
     @State private var maxWidth: Double = Double(PreviewPreferences.load().maxWidth)
+    @State private var language: String = PreviewPreferences.load().language
+
+    private var currentVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
+    }
 
     var body: some View {
         Form {
-            Section("プレビュー") {
-                Picker("文字サイズ", selection: $fontSize) {
-                    Text("小").tag(14)
-                    Text("中").tag(16)
-                    Text("大").tag(18)
+            Section("General") {
+                Picker("Language", selection: $language) {
+                    Text("System Default").tag("system")
+                    Text("English").tag("en")
+                    Text("日本語").tag("ja")
+                }
+                .onChange(of: language) { _, newValue in
+                    var prefs = PreviewPreferences.load()
+                    prefs.language = newValue
+                    prefs.save()
+                    if newValue == "system" {
+                        appLocale = .autoupdatingCurrent
+                    } else {
+                        appLocale = Locale(identifier: newValue)
+                    }
+                }
+            }
+
+            Section("Preview") {
+                Picker("Font Size", selection: $fontSize) {
+                    Text("Small").tag(14)
+                    Text("Medium").tag(16)
+                    Text("Large").tag(18)
                 }
                 .pickerStyle(.segmented)
                 .onChange(of: fontSize) { _, newValue in
@@ -28,7 +53,7 @@ struct SettingsView: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        Text("最大幅")
+                        Text("Max Width")
                         Spacer()
                         Text("\(Int(maxWidth)) pt")
                             .foregroundStyle(.secondary)
@@ -42,12 +67,27 @@ struct SettingsView: View {
                         }
                 }
             }
+            Section("Updates") {
+                Toggle("Check for updates automatically", isOn: Binding(
+                    get: { updaterViewModel.automaticallyChecksForUpdates },
+                    set: { updaterViewModel.automaticallyChecksForUpdates = $0 }
+                ))
+
+                Button("Check for Updates") {
+                    updaterViewModel.checkForUpdates()
+                }
+                .disabled(!updaterViewModel.canCheckForUpdates)
+
+                Text("Version \(currentVersion)")
+                    .foregroundStyle(.secondary)
+                    .font(.footnote)
+            }
         }
         .formStyle(.grouped)
-        .frame(width: 360, height: 200)
+        .frame(width: 360, height: 380)
     }
 }
 
 #Preview {
-    SettingsView()
+    SettingsView(appLocale: .constant(.autoupdatingCurrent), updaterViewModel: UpdaterViewModel())
 }
