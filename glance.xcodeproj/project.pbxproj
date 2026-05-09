@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		BA60C2572FAEF3570021BD5D /* glanceQLExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = BA60C2502FAEF3570021BD5D /* glanceQLExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		BA70D0012FB0000100000003 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = BA70D0012FB0000100000002 /* Sparkle */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -55,6 +56,16 @@
 		BA60C2502FAEF3570021BD5D /* glanceQLExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = glanceQLExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		BA60C2632FAEF3570021BD5D /* Exceptions for "glanceQLExtension" folder in "glanceQLExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = BA60C25A2FAEF3570021BD5D /* glanceQLExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		BA60C2222FAEF3540021BD5D /* glance */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -86,21 +97,12 @@
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		BA60C2632FAEF3570021BD5D /* Exceptions for "glanceQLExtension" folder in "glanceQLExtension" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = BA60C25A2FAEF3570021BD5D /* glanceQLExtension */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFrameworksBuildPhase section */
 		BA60C21D2FAEF3540021BD5D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BA70D0012FB0000100000003 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -174,6 +176,7 @@
 			);
 			name = glance;
 			packageProductDependencies = (
+				BA70D0012FB0000100000002 /* Sparkle */,
 			);
 			productName = glance;
 			productReference = BA60C2202FAEF3540021BD5D /* glance.app */;
@@ -283,6 +286,9 @@
 			);
 			mainGroup = BA60C2172FAEF3540021BD5D;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				BA70D0012FB0000100000001 /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = BA60C2212FAEF3540021BD5D /* Products */;
 			projectDirPath = "";
@@ -500,6 +506,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = glance/glance.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -529,6 +536,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = glance/glance.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -736,6 +744,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		BA70D0012FB0000100000001 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		BA70D0012FB0000100000002 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BA70D0012FB0000100000001 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = BA60C2182FAEF3540021BD5D /* Project object */;
 }
