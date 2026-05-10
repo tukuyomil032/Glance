@@ -1,35 +1,42 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "General" : {
+    "%lld pt" : {
+
+    },
+    "Check for Updates" : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "一般"
+            "value" : "アップデートを確認"
           }
         }
       }
     },
-    "Language" : {
+    "Check for updates automatically" : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "言語"
+            "value" : "自動でアップデートを確認"
           }
         }
       }
     },
-    "System Default" : {
+    "Check for Updates..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "システムデフォルト"
+            "value" : "アップデートを確認..."
           }
         }
       }
+    },
+    "English" : {
+
     },
     "Font Size" : {
       "localizations" : {
@@ -41,7 +48,18 @@
         }
       }
     },
+    "General" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一般"
+          }
+        }
+      }
+    },
     "How to Use" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ja" : {
           "stringUnit" : {
@@ -52,11 +70,22 @@
       }
     },
     "Just select a Markdown file in Finder and press Space. It shows a formatted preview." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Finder で Markdown ファイルを選択して Space を押すだけ。書式付きプレビューを表示します。"
+          }
+        }
+      }
+    },
+    "Language" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "言語"
           }
         }
       }
@@ -72,6 +101,7 @@
       }
     },
     "Launch glance.app once (first time only)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ja" : {
           "stringUnit" : {
@@ -82,6 +112,7 @@
       }
     },
     "Markdown Quick Look Preview" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ja" : {
           "stringUnit" : {
@@ -111,7 +142,11 @@
         }
       }
     },
+    "Open Markdown File" : {
+
+    },
     "Open System Settings > Extensions" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ja" : {
           "stringUnit" : {
@@ -122,6 +157,7 @@
       }
     },
     "Press Space to preview" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ja" : {
           "stringUnit" : {
@@ -142,6 +178,7 @@
       }
     },
     "Select a .md file in Finder" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ja" : {
           "stringUnit" : {
@@ -151,12 +188,25 @@
         }
       }
     },
+    "Select a Markdown file to preview" : {
+
+    },
     "Small" : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "小"
+          }
+        }
+      }
+    },
+    "System Default" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "システムデフォルト"
           }
         }
       }
@@ -171,36 +221,6 @@
         }
       }
     },
-    "Check for Updates" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "アップデートを確認"
-          }
-        }
-      }
-    },
-    "Check for updates automatically" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自動でアップデートを確認"
-          }
-        }
-      }
-    },
-    "Check for Updates..." : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "アップデートを確認..."
-          }
-        }
-      }
-    },
     "Version %@" : {
       "localizations" : {
         "ja" : {
@@ -210,6 +230,9 @@
           }
         }
       }
+    },
+    "日本語" : {
+
     }
   },
   "version" : "1.0"
