@@ -198,3 +198,16 @@ jobs:
             build/dmg/glance-${{ steps.version.outputs.version }}-arm64.dmg
             build/dmg/glance-${{ steps.version.outputs.version }}-x86_64.dmg
             build/dmg/glance-${{ steps.version.outputs.version }}-universal.dmg
+
+      - name: Update appcast Gist
+        if: steps.tag_check.outputs.exists == 'false'
+        env:
+          GIST_ID: ${{ secrets.GIST_ID }}
+          GIST_PAT: ${{ secrets.GIST_PAT }}
+        run: |
+          CONTENT=$(cat appcast.xml | jq -Rs .)
+          curl -s -X PATCH \
+            -H "Authorization: token $GIST_PAT" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/gists/$GIST_ID \
+            -d "{\"files\":{\"appcast.xml\":{\"content\":$CONTENT}}}"
