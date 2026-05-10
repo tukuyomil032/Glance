@@ -23,7 +23,7 @@
 │                     └──────────────────────┘   │
 │  ┌───────────────┐                             │
 │  │ UpdaterVM     │   App Group UserDefaults    │
-│  │ (Sparkle)     │  (group.com.tukuyomi..)    │
+│  │ (Sparkle)     │  (group.com.tukuyomi032.glance)  │
 │  └───────────────┘                             │
 └─────────────────────────────────────────────────┘
 ```

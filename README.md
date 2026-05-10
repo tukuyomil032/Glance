@@ -28,7 +28,7 @@ glance is a macOS menu bar app that renders Markdown files with rich formatting.
 
 **Requirements:** macOS Tahoe (26.0) or later
 
-Download the latest release from [GitHub Releases](https://github.com/tukuyomil032/glance/releases):
+Download the latest release from [GitHub Releases](https://github.com/tukuyomi032/glance/releases):
 
 1. Open the DMG and drag **glance** to your Applications folder.
 2. Launch glance — the icon appears in your menu bar.
@@ -56,7 +56,7 @@ Press **Cmd+,** or go to **glance → Settings** to configure:
 
 ```bash
 # Clone the repository
-git clone https://github.com/tukuyomil032/glance.git
+git clone https://github.com/tukuyomi032/glance.git
 cd glance
 
 # Build

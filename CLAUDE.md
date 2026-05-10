@@ -50,8 +50,8 @@ xcodebuild -project glance.xcodeproj -scheme glance -configuration Debug build
 # Run tests
 xcodebuild -project glance.xcodeproj -scheme glance -configuration Debug test
 
-# Open preview (app UI)
-open build/Debug/glance.app
+# Run the app (Xcode GUI推奨。CLIの場合はDerivedDataのビルドパスを確認)
+open "$(xcodebuild -project glance.xcodeproj -showBuildSettings 2>/dev/null | awk '/BUILT_PRODUCTS_DIR/{print $3}')/glance.app"
 ```
 
 ## Key Architecture Decisions
