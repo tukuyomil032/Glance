@@ -6,12 +6,66 @@
 //
 
 import Testing
+import Foundation
 @testable import glance
 
-struct glanceTests {
+struct MarkdownRendererTests {
 
-    @Test func example() async throws {
-        // Write your test here and use APIs like `#expect(...)` to check expected conditions.
+    @Test func headingRendering() {
+        let html = MarkdownRenderer.render("# Title")
+        #expect(html.contains("<h1>"))
+        #expect(html.contains("Title"))
     }
 
+    @Test func boldItalic() {
+        let html = MarkdownRenderer.render("**bold** _italic_")
+        #expect(html.contains("<strong>"))
+        #expect(html.contains("<em>"))
+    }
+
+    @Test func codeBlock() {
+        let html = MarkdownRenderer.render("```\ncode\n```")
+        #expect(html.contains("<pre>") || html.contains("<code>"))
+    }
+
+    @Test func table() {
+        let md = "| A | B |\n|---|---|\n| 1 | 2 |"
+        let html = MarkdownRenderer.render(md)
+        #expect(html.contains("<table>"))
+    }
+
+    @Test func emptyInput() {
+        let html = MarkdownRenderer.render("")
+        #expect(html.isEmpty || html.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+    }
+
+    @Test func utf8Japanese() {
+        let html = MarkdownRenderer.render("## 日本語テスト 🎉")
+        #expect(html.contains("日本語テスト"))
+    }
+}
+
+struct HTMLTemplateTests {
+
+    @Test func htmlStructure() {
+        let html = HTMLTemplate.render(body: "<p>test</p>")
+        #expect(html.contains("<!DOCTYPE html>"))
+        #expect(html.contains("<style>"))
+        #expect(html.contains("<p>test</p>"))
+    }
+
+    @Test func fontSizeInjection() {
+        let html = HTMLTemplate.render(body: "", fontSize: 18, maxWidth: 800)
+        #expect(html.contains("18px") || html.contains("font-size"))
+    }
+}
+
+struct PreviewPreferencesTests {
+
+    @Test func defaultValues() {
+        let prefs = PreviewPreferences(fontSize: 16, maxWidth: 760, language: "system")
+        #expect(prefs.fontSize == 16)
+        #expect(prefs.maxWidth == 760)
+        #expect(prefs.language == "system")
+    }
 }
