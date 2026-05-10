@@ -4,33 +4,27 @@
 
 ```
 ┌─────────────────────────────────────────────────┐
-│  glance.app (Container App)                     │
-│  ┌───────────────┐  ┌────────────────────────┐  │
-│  │ OnboardingView│  │ SettingsView           │  │
-│  │ (SwiftUI)     │  │ (SwiftUI + @AppStorage)│  │
-│  └───────────────┘  └────────────────────────┘  │
-│                           │                     │
-│             App Group UserDefaults              │
-│            (group.com.tukuyomi032.glance)       │
-│                           │                     │
-│  ┌────────────────────────┴──────────────────┐  │
-│  │  Contents/Library/QuickLook/              │  │
-│  │  glanceQLExtension.appex                  │  │
-│  │  ┌──────────────────────────────────────┐ │  │
-│  │  │ PreviewViewController                │ │  │
-│  │  │ (NSViewController + QLPreviewingCtrl)│ │  │
-│  │  │         │                            │ │  │
-│  │  │    ┌────▼─────┐    ┌──────────────┐  │ │  │
-│  │  │    │ Markdown │    │ HTML         │  │ │  │
-│  │  │    │ Renderer │───▶│ Template     │  │ │  │
-│  │  │    │ (cmark)  │    │ (CSS + HTML) │  │ │  │
-│  │  │    └──────────┘    └──────┬───────┘  │ │  │
-│  │  │                           │          │ │  │
-│  │  │                    ┌──────▼───────┐  │ │  │
-│  │  │                    │  WKWebView   │  │ │  │
-│  │  │                    └──────────────┘  │ │  │
-│  │  └──────────────────────────────────────┘ │  │
-│  └───────────────────────────────────────────┘  │
+│  glance.app                                     │
+│  ┌──────────────┐   ┌──────────────────────┐   │
+│  │ glanceApp    │   │ AppDelegate           │   │
+│  │ (@main)      │   │ - NSStatusBar icon    │   │
+│  │ Settings     │   │ - Global hotkey (Cmd+G)   │
+│  │ scene        │   │ - Accessibility mgmt  │   │
+│  └──────────────┘   └────────────┬─────────┘   │
+│                                  │ open file    │
+│  ┌───────────────┐               │              │
+│  │ SettingsView  │               ▼              │
+│  │ (SwiftUI)     │  ┌──────────────────────┐   │
+│  │ fontSize      │  │ PreviewWindowCtrlr    │   │
+│  │ maxWidth      │  │ - Read file (UTF-8)  │   │
+│  │ language      │  │ - MarkdownRenderer    │   │
+│  │ updates       │  │ - HTMLTemplate        │   │
+│  └───────────────┘  │ - WKWebView display   │   │
+│                     └──────────────────────┘   │
+│  ┌───────────────┐                             │
+│  │ UpdaterVM     │   App Group UserDefaults    │
+│  │ (Sparkle)     │  (group.com.tukuyomi..)    │
+│  └───────────────┘                             │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -44,73 +38,108 @@
 |------|-----|
 | Bundle ID | `com.tukuyomi032.glance` |
 | Product Type | Application (.app) |
-| Frameworks | SwiftUI, WebKit |
-| Deployment Target | macOS 12.0+ |
+| Frameworks | SwiftUI, AppKit, WebKit |
+| Deployment Target | macOS 26.0+ |
 | Sandbox | Yes |
+| Network Client | Yes (Sparkle update check) |
 | App Group | `group.com.tukuyomi032.glance` |
-
-### 2.2 glanceQLExtension (Quick Look Extension)
-
-| 項目 | 値 |
-|------|-----|
-| Bundle ID | `com.tukuyomi032.glance.QLExtension` |
-| Product Type | Quick Look Preview Extension (.appex) |
-| Frameworks | Quartz, WebKit |
-| Deployment Target | macOS 12.0+ |
-| Sandbox | Yes |
-| App Group | `group.com.tukuyomi032.glance` |
-| Embed Location | `Contents/Library/QuickLook/` |
 
 ---
 
 ## 3. コンポーネント詳細
 
-### 3.1 MarkdownRenderer
+### 3.1 glanceApp
+
+**ファイル**: `glance/glanceApp.swift`
+
+SwiftUI の `@main` エントリーポイント。Settings シーンを定義し、`AppDelegate` を `@NSApplicationDelegateAdaptor` で接続。
+
+### 3.2 AppDelegate
+
+**ファイル**: `glance/AppDelegate.swift`
+
+メニューバーアイコン・グローバルホットキー・Accessibility 権限管理を担当。
+
+**機能**:
+- `NSStatusBar.system.statusItem` でメニューバーアイコン表示
+- `AXIsProcessTrustedWithOptions` で Accessibility 権限確認
+- グローバルホットキー Cmd+G → ファイルオープンダイアログ → `PreviewWindowController` を起動
+- メニューに「Open File…」「Settings」「Quit」を表示
+
+### 3.3 PreviewWindowController
+
+**ファイル**: `glance/Windows/PreviewWindowController.swift`
+
+Markdown ファイルを読み込み、WKWebView にレンダリング結果を表示する NSWindowController。
+
+**処理フロー**:
+1. ファイルパスを受け取り、UTF-8 でテキスト読み込み
+2. `MarkdownRenderer.render()` で HTML fragment に変換
+3. `HTMLTemplate.render()` で完全な HTML ページを生成（設定値注入）
+4. `WKWebView.loadHTMLString()` で表示
+
+### 3.4 SettingsView
+
+**ファイル**: `glance/Views/SettingsView.swift`
+
+macOS 標準の Settings ウィンドウ（Cmd+,）。SwiftUI で実装。
+
+**設定項目**:
+- 言語: `Picker` (System Default / English / 日本語)
+- フォントサイズ: `Picker` (14 / 16 / 18 px)
+- コンテンツ最大幅: `Slider` (500–900 px)
+- 自動アップデート: `Toggle`
+- 「今すぐ確認」ボタン
+
+### 3.5 PreviewContentView
+
+**ファイル**: `glance/Views/PreviewContentView.swift`
+
+`WKWebView` を SwiftUI で使用するための `NSViewRepresentable` ラッパー。
+
+### 3.6 UpdaterViewModel
+
+**ファイル**: `glance/Services/UpdaterViewModel.swift`
+
+Sparkle フレームワークの `SPUUpdater` をラップした `ObservableObject`。アップデートチェックとインストールを管理。
+
+### 3.7 MarkdownRenderer
 
 **ファイル**: `Shared/MarkdownRenderer.swift`
-**ターゲット**: glance, glanceQLExtension
 
-cmark の C API をラップし、Markdown テキストを HTML 文字列に変換する。
+Ink (JohnSundell/Ink) の薄いラッパー。Markdown テキストを HTML fragment に変換。
 
 ```swift
 enum MarkdownRenderer {
-    /// Markdown テキストを HTML fragment に変換
     static func render(_ markdown: String) -> String
 }
 ```
 
-**パーサーオプション**:
-- `CMARK_OPT_SMART` — スマートクォート、em-dash 変換
-- `CMARK_OPT_UNSAFE` — 生の HTML を許可（サンドボックス内なので安全）
+**パーサー**: Ink 0.6.0 — GFM対応（テーブル・タスクリスト・打ち消し線）
 
-**依存**: swift-cmark SPM パッケージ (`https://github.com/apple/swift-cmark`)
-
-### 3.2 HTMLTemplate
+### 3.8 HTMLTemplate
 
 **ファイル**: `Shared/HTMLTemplate.swift`
-**ターゲット**: glance, glanceQLExtension
 
 HTML fragment を完全な HTML ドキュメントにラップする。CSS を `<style>` タグとしてインライン埋め込み。
 
 ```swift
 enum HTMLTemplate {
-    /// 完全な HTML ページを生成
     static func render(markdown: String, preferences: PreviewPreferences) -> String
 }
 ```
 
-### 3.3 PreviewPreferences
+### 3.9 PreviewPreferences
 
 **ファイル**: `Shared/PreviewPreferences.swift`
-**ターゲット**: glance, glanceQLExtension
 
 App Group UserDefaults を介した設定値の読み書き。
 
 ```swift
 struct PreviewPreferences {
-    var fontSize: Int          // default: 16
-    var maxWidth: Int          // default: 760
-    var showLineNumbers: Bool  // default: false
+    var fontSize: Int       // default: 16
+    var maxWidth: Int       // default: 760
+    var language: String    // default: "system"
     
     static func load() -> PreviewPreferences
     func save()
@@ -119,69 +148,22 @@ struct PreviewPreferences {
 
 **UserDefaults Suite**: `group.com.tukuyomi032.glance`
 
-### 3.4 PreviewViewController
-
-**ファイル**: `glanceQLExtension/PreviewViewController.swift`
-**ターゲット**: glanceQLExtension
-
-Quick Look Extension のエントリーポイント。
-
-```swift
-class PreviewViewController: NSViewController, QLPreviewingController {
-    func preparePreviewOfFile(at url: URL) async throws
-}
-```
-
-**処理フロー**:
-1. `url` からファイルデータを読み込み（UTF-8）
-2. `MarkdownRenderer.render()` で HTML fragment に変換
-3. `HTMLTemplate.render()` で完全な HTML ページを生成
-4. `WKWebView.loadHTMLString()` で表示
-5. `baseURL` をファイルの親ディレクトリに設定（相対画像パス解決用）
-
-### 3.5 OnboardingView
-
-**ファイル**: `glance/Views/OnboardingView.swift`
-**ターゲット**: glance
-
-アプリ起動時に表示するメイン画面。
-
-**表示内容**:
-- アプリアイコンとタイトル
-- インストール状態の表示
-- 使い方の説明（Finder で .md を選択 → Space）
-- Markdown ファイルのドラッグ＆ドロップによるインアプリプレビュー
-
-### 3.6 SettingsView
-
-**ファイル**: `glance/Views/SettingsView.swift`
-**ターゲット**: glance
-
-macOS 標準の Settings ウィンドウ（Cmd+,）。
-
-**設定項目**:
-- フォントサイズ: `Picker` (14 / 16 / 18)
-- コンテンツ最大幅: `Slider` (500–900px)
-- 行番号表示: `Toggle`
-
 ---
 
 ## 4. CSS 設計
 
-### 4.1 カスタムプロパティ
+### 4.1 カスタムプロパティ（ライトモード）
 
 ```css
 :root {
     --bg: #ffffff;
-    --text: #24292e;
-    --link: #0366d6;
+    --text: #1f2328;
+    --link: #0969da;
     --code-bg: #f6f8fa;
-    --code-text: #24292e;
-    --border: #e1e4e8;
-    --heading-border: #eaecef;
-    --blockquote-border: #dfe2e5;
-    --blockquote-text: #6a737d;
-    --table-border: #dfe2e5;
+    --border: #d0d7de;
+    --blockquote-border: #d0d7de;
+    --blockquote-text: #656d76;
+    --table-border: #d0d7de;
     --table-stripe: #f6f8fa;
 }
 ```
@@ -195,9 +177,7 @@ macOS 標準の Settings ウィンドウ（Cmd+,）。
         --text: #e6edf3;
         --link: #58a6ff;
         --code-bg: #161b22;
-        --code-text: #e6edf3;
         --border: #30363d;
-        --heading-border: #21262d;
         --blockquote-border: #3b434b;
         --blockquote-text: #8b949e;
         --table-border: #30363d;
@@ -209,102 +189,20 @@ macOS 標準の Settings ウィンドウ（Cmd+,）。
 ### 4.3 タイポグラフィ
 
 - Body: `-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif`
-- Code: `"SF Mono", "Menlo", "Monaco", "Courier New", monospace`
+- Code: `"SF Mono", SFMono-Regular, ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace`
 - Line height: `1.6`
 - Max width: 設定値 (default 760px)、中央揃え
 
-### 4.4 要素別スタイル
-
-| 要素 | スタイル |
-|------|---------|
-| `h1` | 2em, bold, 下ボーダー |
-| `h2` | 1.5em, bold, 下ボーダー |
-| `h3`–`h6` | 段階的サイズ、bold |
-| `code` (inline) | 背景色、角丸、padding |
-| `pre code` | 背景色、角丸、横スクロール、padding 1em |
-| `blockquote` | 左ボーダー 4px、薄い文字色 |
-| `table` | 罫線、ゼブラストライプ |
-| `img` | max-width: 100% |
-| `hr` | border-top のみ |
-| `a` | リンク色、下線なし、ホバーで下線 |
-
 ---
 
-## 5. Info.plist 設定
+## 5. Entitlements
 
-### 5.1 Extension Info.plist
-
-```xml
-<key>NSExtension</key>
-<dict>
-    <key>NSExtensionAttributes</key>
-    <dict>
-        <key>QLSupportedContentTypes</key>
-        <array>
-            <string>net.daringfireball.markdown</string>
-            <string>net.ia.markdown</string>
-            <string>public.markdown</string>
-            <string>text.markdown</string>
-        </array>
-        <key>QLSupportsSearchableItems</key>
-        <true/>
-    </dict>
-    <key>NSExtensionPointIdentifier</key>
-    <string>com.apple.quicklook.preview</string>
-    <key>NSExtensionPrincipalClass</key>
-    <string>$(PRODUCT_MODULE_NAME).PreviewViewController</string>
-</dict>
-```
-
-### 5.2 Container App — UTImportedTypeDeclarations
-
-```xml
-<key>UTImportedTypeDeclarations</key>
-<array>
-    <dict>
-        <key>UTTypeIdentifier</key>
-        <string>net.daringfireball.markdown</string>
-        <key>UTTypeDescription</key>
-        <string>Markdown Document</string>
-        <key>UTTypeConformsTo</key>
-        <array>
-            <string>public.plain-text</string>
-        </array>
-        <key>UTTypeTagSpecification</key>
-        <dict>
-            <key>public.filename-extension</key>
-            <array>
-                <string>md</string>
-                <string>markdown</string>
-                <string>mdown</string>
-                <string>mkd</string>
-            </array>
-        </dict>
-    </dict>
-</array>
-```
-
----
-
-## 6. Entitlements
-
-### 6.1 glance.entitlements
+### glance.entitlements
 
 ```xml
 <key>com.apple.security.app-sandbox</key>
 <true/>
-<key>com.apple.security.files.user-selected.read-only</key>
-<true/>
-<key>com.apple.security.application-groups</key>
-<array>
-    <string>group.com.tukuyomi032.glance</string>
-</array>
-```
-
-### 6.2 glanceQLExtension.entitlements
-
-```xml
-<key>com.apple.security.app-sandbox</key>
+<key>com.apple.security.network.client</key>
 <true/>
 <key>com.apple.security.application-groups</key>
 <array>
@@ -314,17 +212,18 @@ macOS 標準の Settings ウィンドウ（Cmd+,）。
 
 ---
 
-## 7. SPM 依存
+## 6. SPM 依存
 
-| パッケージ | URL | バージョン | ターゲット |
-|-----------|-----|-----------|-----------|
-| swift-cmark | `https://github.com/apple/swift-cmark` | latest | glance, glanceQLExtension |
+| パッケージ | URL | バージョン | 用途 |
+|-----------|-----|-----------|------|
+| Ink | `https://github.com/JohnSundell/Ink` | 0.6.0 | Markdown → HTML 変換 |
+| Sparkle | `https://github.com/sparkle-project/Sparkle` | 2.9.1 | アップデート配信 |
 
 ---
 
-## 8. テスト計画
+## 7. テスト計画
 
-### 8.1 ユニットテスト (glanceTests)
+### 7.1 ユニットテスト (glanceTests)
 
 | テスト | 内容 |
 |--------|------|
@@ -337,60 +236,24 @@ macOS 標準の Settings ウィンドウ（Cmd+,）。
 | `testHTMLTemplateStructure` | 出力に `<!DOCTYPE html>`, `<style>` が含まれる |
 | `testPreferencesDefaults` | デフォルト値の検証 |
 
-### 8.2 手動統合テスト
+### 7.2 手動統合テスト
 
 | テスト | 手順 |
 |--------|------|
-| Quick Look 起動 | Finder で .md 選択 → Space → 書式付き表示を確認 |
+| ホットキー起動 | Cmd+G → ファイルダイアログ表示 → .md 選択 → プレビュー表示 |
+| メニューバー操作 | メニューバーアイコン → Open File… → プレビュー表示 |
 | ダークモード | システム設定切替 → 配色変化を確認 |
-| 大きなファイル | 1MB+ の .md → タイムアウトなく表示 |
-| 相対画像 | 同ディレクトリの画像パスが解決されるか |
-| 設定反映 | フォントサイズ変更 → 再プレビューで反映 |
+| 設定反映 | フォントサイズ変更 → プレビューウィンドウで反映確認 |
+| アップデート確認 | Settings → Check for Updates ボタン押下 |
 
 ---
 
-## 9. 配布
+## 8. 配布
 
-### 9.1 直接配布（推奨）
+### 8.1 直接配布
 
 1. Developer ID Application 証明書で署名
 2. `xcrun notarytool submit` で公証
 3. `xcrun stapler staple` でチケット添付
-4. `.dmg` で配布（Applications へドラッグ）
-
-### 9.2 App Store（オプション）
-
-- サンドボックス必須（対応済み）
-- UTImportedTypeDeclarations の正確な設定が必要
-- 画像表示に制約あり
-
----
-
-## 10. 実装フェーズ
-
-### Phase 1: Foundation
-1. swift-cmark SPM パッケージ追加
-2. `Shared/MarkdownRenderer.swift` 実装
-3. `Shared/HTMLTemplate.swift` 実装（CSS 含む）
-4. `Shared/PreviewPreferences.swift` 実装
-5. ユニットテスト作成・通過確認
-
-### Phase 2: Quick Look Extension
-6. Xcode で Quick Look Preview Extension ターゲット追加
-7. Info.plist に UTType 設定
-8. `PreviewViewController.swift` 実装
-9. App Group entitlement を両ターゲットに設定
-10. Extension を main app にエンベッド
-11. `qlmanage -r` ポストビルドスクリプト追加
-
-### Phase 3: Main App UI
-12. `glanceApp.swift` を Settings シーン付きに更新
-13. `OnboardingView.swift` 実装
-14. `SettingsView.swift` 実装
-15. インアプリプレビュー機能
-
-### Phase 4: Polish
-16. アプリアイコン作成
-17. UI テスト
-18. ダーク/ライトモード検証
-19. 配布パッケージング
+4. `appcast.xml` を更新（Sparkle アップデートフィード）
+5. `.dmg` で配布（Applications へドラッグ）
