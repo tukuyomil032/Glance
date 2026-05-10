@@ -103,6 +103,13 @@ playground.xcworkspace
 # .swiftpm
 
 .build/
+build/**
+build/Debug/**
+build/EagerLinkingTBDs/**
+build/ExplicitPrecompiledModules/**
+build/glance.build/**
+build/SwiftExplicitPreLinkingTBDs.build/**
+build/XCBuildData/**
 
 # CocoaPods
 #
