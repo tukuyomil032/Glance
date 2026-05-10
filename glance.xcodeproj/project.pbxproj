@@ -7,10 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		BA60C2572FAEF3570021BD5D /* glanceQLExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = BA60C2502FAEF3570021BD5D /* glanceQLExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		BA70D0012FB0000100000003 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = BA70D0012FB0000100000002 /* Sparkle */; };
 		BA70D0022FB0000200000003 /* Ink in Frameworks */ = {isa = PBXBuildFile; productRef = BA70D0022FB0000200000002 /* Ink */; };
-		BA70D0022FB0000200000005 /* Ink in Frameworks */ = {isa = PBXBuildFile; productRef = BA70D0022FB0000200000004 /* Ink */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -28,45 +26,13 @@
 			remoteGlobalIDString = BA60C21F2FAEF3540021BD5D;
 			remoteInfo = glance;
 		};
-		BA60C2582FAEF3570021BD5D /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = BA60C2182FAEF3540021BD5D /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = BA60C25A2FAEF3570021BD5D;
-			remoteInfo = glanceQLExtension;
-		};
 /* End PBXContainerItemProxy section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-		BA60C2562FAEF3570021BD5D /* Embed App Extensions */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 13;
-			files = (
-				BA60C2572FAEF3570021BD5D /* glanceQLExtension.appex in Embed App Extensions */,
-			);
-			name = "Embed App Extensions";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		BA60C2202FAEF3540021BD5D /* glance.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = glance.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BA60C22D2FAEF3570021BD5D /* glanceTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = glanceTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		BA60C2372FAEF3570021BD5D /* glanceUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = glanceUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		BA60C2502FAEF3570021BD5D /* glanceQLExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = glanceQLExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
-
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		BA60C2632FAEF3570021BD5D /* Exceptions for "glanceQLExtension" folder in "glanceQLExtension" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = BA60C25A2FAEF3570021BD5D /* glanceQLExtension */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		BA60C2222FAEF3540021BD5D /* glance */ = {
@@ -82,14 +48,6 @@
 		BA60C23A2FAEF3570021BD5D /* glanceUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = glanceUITests;
-			sourceTree = "<group>";
-		};
-		BA60C2512FAEF3570021BD5D /* glanceQLExtension */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				BA60C2632FAEF3570021BD5D /* Exceptions for "glanceQLExtension" folder in "glanceQLExtension" target */,
-			);
-			path = glanceQLExtension;
 			sourceTree = "<group>";
 		};
 		BA60C2522FAEF3570021BD5D /* Shared */ = {
@@ -123,14 +81,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		BA60C2542FAEF3570021BD5D /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				BA70D0022FB0000200000005 /* Ink in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -138,7 +88,6 @@
 			isa = PBXGroup;
 			children = (
 				BA60C2222FAEF3540021BD5D /* glance */,
-				BA60C2512FAEF3570021BD5D /* glanceQLExtension */,
 				BA60C2522FAEF3570021BD5D /* Shared */,
 				BA60C2302FAEF3570021BD5D /* glanceTests */,
 				BA60C23A2FAEF3570021BD5D /* glanceUITests */,
@@ -150,7 +99,6 @@
 			isa = PBXGroup;
 			children = (
 				BA60C2202FAEF3540021BD5D /* glance.app */,
-				BA60C2502FAEF3570021BD5D /* glanceQLExtension.appex */,
 				BA60C22D2FAEF3570021BD5D /* glanceTests.xctest */,
 				BA60C2372FAEF3570021BD5D /* glanceUITests.xctest */,
 			);
@@ -167,12 +115,10 @@
 				BA60C21C2FAEF3540021BD5D /* Sources */,
 				BA60C21D2FAEF3540021BD5D /* Frameworks */,
 				BA60C21E2FAEF3540021BD5D /* Resources */,
-				BA60C2562FAEF3570021BD5D /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				BA60C2592FAEF3570021BD5D /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				BA60C2222FAEF3540021BD5D /* glance */,
@@ -233,30 +179,6 @@
 			productReference = BA60C2372FAEF3570021BD5D /* glanceUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
-		BA60C25A2FAEF3570021BD5D /* glanceQLExtension */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = BA60C25D2FAEF3570021BD5D /* Build configuration list for PBXNativeTarget "glanceQLExtension" */;
-			buildPhases = (
-				BA60C2532FAEF3570021BD5D /* Sources */,
-				BA60C2542FAEF3570021BD5D /* Frameworks */,
-				BA60C2552FAEF3570021BD5D /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				BA60C2512FAEF3570021BD5D /* glanceQLExtension */,
-				BA60C2522FAEF3570021BD5D /* Shared */,
-			);
-			name = glanceQLExtension;
-			packageProductDependencies = (
-				BA70D0022FB0000200000004 /* Ink */,
-			);
-			productName = glanceQLExtension;
-			productReference = BA60C2502FAEF3570021BD5D /* glanceQLExtension.appex */;
-			productType = "com.apple.product-type.app-extension";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -277,9 +199,6 @@
 					BA60C2362FAEF3570021BD5D = {
 						CreatedOnToolsVersion = 26.3;
 						TestTargetID = BA60C21F2FAEF3540021BD5D;
-					};
-					BA60C25A2FAEF3570021BD5D = {
-						CreatedOnToolsVersion = 26.3;
 					};
 				};
 			};
@@ -302,7 +221,6 @@
 			projectRoot = "";
 			targets = (
 				BA60C21F2FAEF3540021BD5D /* glance */,
-				BA60C25A2FAEF3570021BD5D /* glanceQLExtension */,
 				BA60C22C2FAEF3570021BD5D /* glanceTests */,
 				BA60C2362FAEF3570021BD5D /* glanceUITests */,
 			);
@@ -325,13 +243,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		BA60C2352FAEF3570021BD5D /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		BA60C2552FAEF3570021BD5D /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -362,13 +273,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		BA60C2532FAEF3570021BD5D /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -381,11 +285,6 @@
 			isa = PBXTargetDependency;
 			target = BA60C21F2FAEF3540021BD5D /* glance */;
 			targetProxy = BA60C2382FAEF3570021BD5D /* PBXContainerItemProxy */;
-		};
-		BA60C2592FAEF3570021BD5D /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = BA60C25A2FAEF3570021BD5D /* glanceQLExtension */;
-			targetProxy = BA60C2582FAEF3570021BD5D /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -521,6 +420,8 @@
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSAccessibilityUsageDescription = "glance uses Accessibility to detect the Command+G keyboard shortcut globally.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -551,6 +452,8 @@
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSAccessibilityUsageDescription = "glance uses Accessibility to detect the Command+G keyboard shortcut globally.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -646,64 +549,6 @@
 			};
 			name = Release;
 		};
-		BA60C25B2FAEF3570021BD5D /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = glanceQLExtension/glanceQLExtension.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = Q9CTDZWWR9;
-				ENABLE_APP_SANDBOX = NO;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = glanceQLExtension/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "glance Quick Look";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"@executable_path/../Frameworks",
-					"@executable_path/../../../../Frameworks",
-				);
-				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.tukuyomi032.glance.QLExtension;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-			};
-			name = Debug;
-		};
-		BA60C25C2FAEF3570021BD5D /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = glanceQLExtension/glanceQLExtension.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = Q9CTDZWWR9;
-				ENABLE_APP_SANDBOX = NO;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = glanceQLExtension/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "glance Quick Look";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"@executable_path/../Frameworks",
-					"@executable_path/../../../../Frameworks",
-				);
-				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.tukuyomi032.glance.QLExtension;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -743,15 +588,6 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		BA60C25D2FAEF3570021BD5D /* Build configuration list for PBXNativeTarget "glanceQLExtension" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				BA60C25B2FAEF3570021BD5D /* Debug */,
-				BA60C25C2FAEF3570021BD5D /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -780,11 +616,6 @@
 			productName = Sparkle;
 		};
 		BA70D0022FB0000200000002 /* Ink */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = BA70D0022FB0000200000001 /* XCRemoteSwiftPackageReference "Ink" */;
-			productName = Ink;
-		};
-		BA70D0022FB0000200000004 /* Ink */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = BA70D0022FB0000200000001 /* XCRemoteSwiftPackageReference "Ink" */;
 			productName = Ink;
