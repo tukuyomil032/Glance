@@ -40,7 +40,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     }
 
     func applicationDidResignActive(_ notification: Notification) {
-        NSApp.setActivationPolicy(.accessory)
+        let hasVisibleWindows = NSApp.windows.contains { $0.isVisible }
+        if !hasVisibleWindows {
+            NSApp.setActivationPolicy(.accessory)
+        }
     }
 
     // MARK: - Accessibility permission
@@ -116,6 +119,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
 
+        NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
         panel.orderFrontRegardless()
 
@@ -223,6 +227,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     }
 
     @objc private func openSettings() {
+        NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
         NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
     }

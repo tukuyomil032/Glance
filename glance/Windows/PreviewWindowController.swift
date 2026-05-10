@@ -9,6 +9,7 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
 
     private var webView: WKWebView?
     private var currentFileURL: URL?
+    private var pendingURL: URL?
 
     // MARK: - Factory
 
@@ -36,7 +37,14 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
     func loadMarkdownFile(at url: URL) {
         currentFileURL = url
         window?.title = url.lastPathComponent
+        guard let webView else {
+            pendingURL = url
+            return
+        }
+        performLoad(url: url, into: webView)
+    }
 
+    private func performLoad(url: URL, into webView: WKWebView) {
         Task {
             do {
                 let source = try String(contentsOf: url, encoding: .utf8)
@@ -46,7 +54,7 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
                                                fontSize: prefs.fontSize,
                                                maxWidth: prefs.maxWidth)
                 await MainActor.run {
-                    self.webView?.loadHTMLString(html, baseURL: url.deletingLastPathComponent())
+                    webView.loadHTMLString(html, baseURL: url.deletingLastPathComponent())
                     self.window?.orderFrontRegardless()
                 }
             } catch {
@@ -56,7 +64,7 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
                         fontSize: 16,
                         maxWidth: 760
                     )
-                    self.webView?.loadHTMLString(errorHTML, baseURL: nil)
+                    webView.loadHTMLString(errorHTML, baseURL: nil)
                 }
             }
         }
@@ -85,6 +93,10 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
         let contentView = PreviewContentView(
             onWebViewCreated: { [weak self] wv in
                 self?.webView = wv
+                if let pending = self?.pendingURL {
+                    self?.pendingURL = nil
+                    self?.performLoad(url: pending, into: wv)
+                }
             }
         )
         let host = NSHostingView(rootView: contentView)
