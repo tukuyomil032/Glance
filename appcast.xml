@@ -6,15 +6,15 @@
     <description>Appcast feed for glance updates</description>
     <language>en</language>
     <item>
-      <title>Version 1.02</title>
-      <pubDate>Sun, 10 May 2026 14:00:48 +0000</pubDate>
-      <sparkle:version>1.02</sparkle:version>
-      <sparkle:shortVersionString>1.02</sparkle:shortVersionString>
+      <title>Version 1.03</title>
+      <pubDate>Mon, 11 May 2026 01:56:27 +0000</pubDate>
+      <sparkle:version>1.03</sparkle:version>
+      <sparkle:shortVersionString>1.03</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>12.0</sparkle:minimumSystemVersion>
-      <enclosure url="https://github.com/tukuyomil032/Glance/releases/download/v1.02/glance-1.02-universal.dmg"
+      <enclosure url="https://github.com/tukuyomil032/Glance/releases/download/v1.03/glance-1.03-universal.dmg"
                  type="application/octet-stream"
                  sparkle:edSignature="PLACEHOLDER"
-                 length="3314012" />
+                 length="3314020" />
     </item>
   </channel>
 </rss>
