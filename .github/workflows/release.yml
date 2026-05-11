@@ -114,18 +114,6 @@ jobs:
             echo "Created: glance-${VERSION}-${ARCH}.dmg"
           done
 
-      - name: Compute DMG SHA256 hashes
-        if: steps.tag_check.outputs.exists == 'false'
-        id: sha256
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          ARM_SHA=$(shasum -a 256 "build/dmg/glance-${VERSION}-arm64.dmg" | awk '{print $1}')
-          INTEL_SHA=$(shasum -a 256 "build/dmg/glance-${VERSION}-x86_64.dmg" | awk '{print $1}')
-          echo "arm=${ARM_SHA}" >> "$GITHUB_OUTPUT"
-          echo "intel=${INTEL_SHA}" >> "$GITHUB_OUTPUT"
-          echo "arm64 SHA256: ${ARM_SHA}"
-          echo "x86_64 SHA256: ${INTEL_SHA}"
-
       - name: Install Sparkle tools
         if: steps.tag_check.outputs.exists == 'false'
         run: brew install sparkle
@@ -147,7 +135,7 @@ jobs:
           <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
             <channel>
               <title>glance Updates</title>
-              <link>https://github.com/tukuyomil032/glance</link>
+              <link>https://github.com/tukuyomil032/Glance</link>
               <description>Appcast feed for glance updates</description>
               <language>en</language>
               <item>
@@ -156,7 +144,7 @@ jobs:
                 <sparkle:version>${VERSION}</sparkle:version>
                 <sparkle:shortVersionString>${VERSION}</sparkle:shortVersionString>
                 <sparkle:minimumSystemVersion>12.0</sparkle:minimumSystemVersion>
-                <enclosure url="https://github.com/tukuyomil032/glance/releases/download/v${VERSION}/glance-${VERSION}-universal.dmg"
+                <enclosure url="https://github.com/tukuyomil032/Glance/releases/download/v${VERSION}/glance-${VERSION}-universal.dmg"
                            type="application/octet-stream"
                            sparkle:edSignature="${UNIVERSAL_SIG}"
                            length="${UNIVERSAL_SIZE}" />
@@ -171,8 +159,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add appcast.xml
-          git diff --cached --quiet && echo "No appcast changes" || git commit -m "chore: update appcast for v${{ steps.version.outputs.version }}"
-          git push origin HEAD:main || true
+          if git diff --cached --quiet; then
+            echo "No appcast changes"
+          else
+            git commit -m "chore: update appcast for v${{ steps.version.outputs.version }} [skip ci]"
+          fi
+          git push origin HEAD:main
 
       - name: Create and push tag
         if: steps.tag_check.outputs.exists == 'false'
@@ -210,49 +202,3 @@ jobs:
             build/dmg/glance-${{ steps.version.outputs.version }}-arm64.dmg
             build/dmg/glance-${{ steps.version.outputs.version }}-x86_64.dmg
             build/dmg/glance-${{ steps.version.outputs.version }}-universal.dmg
-
-      - name: Update appcast Gist
-        if: steps.tag_check.outputs.exists == 'false'
-        env:
-          GIST_ID: ${{ secrets.GIST_ID }}
-          GIST_PAT: ${{ secrets.GIST_PAT }}
-        run: |
-          CONTENT=$(cat appcast.xml | jq -Rs .)
-          curl -s -X PATCH \
-            -H "Authorization: token $GIST_PAT" \
-            -H "Accept: application/vnd.github+json" \
-            https://api.github.com/gists/$GIST_ID \
-            -d "{\"files\":{\"appcast.xml\":{\"content\":$CONTENT}}}"
-
-      - name: Update homebrew-tap cask
-        if: steps.tag_check.outputs.exists == 'false'
-        env:
-          HOMEBREW_PAT: ${{ secrets.HOMEBREW_PAT }}
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          ARM_SHA="${{ steps.sha256.outputs.arm }}"
-          INTEL_SHA="${{ steps.sha256.outputs.intel }}"
-          BRANCH="bump/glance-${VERSION}"
-
-          git clone "https://x-access-token:${HOMEBREW_PAT}@github.com/tukuyomil032/homebrew-tap.git" tap
-          cd tap
-
-          sed -i '' \
-            -e "s/version \"[^\"]*\"/version \"${VERSION}\"/" \
-            -e "s/sha256 arm:   \"[^\"]*\"/sha256 arm:   \"${ARM_SHA}\"/" \
-            -e "s/         intel: \"[^\"]*\"/         intel: \"${INTEL_SHA}\"/" \
-            Casks/glance.rb
-
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -b "${BRANCH}"
-          git add Casks/glance.rb
-          git diff --cached --quiet && echo "No cask changes" || {
-            git commit -m "feat: bump glance to ${VERSION}"
-            git push "https://x-access-token:${HOMEBREW_PAT}@github.com/tukuyomil032/homebrew-tap.git" "${BRANCH}"
-            curl -s -X POST \
-              -H "Authorization: bearer ${HOMEBREW_PAT}" \
-              -H "Accept: application/vnd.github+json" \
-              "https://api.github.com/repos/tukuyomil032/homebrew-tap/pulls" \
-              -d "{\"title\":\"feat: bump glance to ${VERSION}\",\"body\":\"Automated cask bump via release.yml\",\"head\":\"${BRANCH}\",\"base\":\"main\"}"
-          }
