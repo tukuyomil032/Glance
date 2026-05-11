@@ -424,6 +424,7 @@
 				INFOPLIST_KEY_NSAccessibilityUsageDescription = "glance uses Accessibility to detect the Command+G keyboard shortcut globally.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_SUFeedURL = "https://raw.githubusercontent.com/tukuyomil032/Glance/main/appcast.xml";
+				INFOPLIST_KEY_SUPublicEDKey = "83CwhlQ4Kk/ZkkllZSAbFuDpQoZKbQP3OT/3sWw94sE=";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -457,6 +458,7 @@
 				INFOPLIST_KEY_NSAccessibilityUsageDescription = "glance uses Accessibility to detect the Command+G keyboard shortcut globally.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_SUFeedURL = "https://raw.githubusercontent.com/tukuyomil032/Glance/main/appcast.xml";
+				INFOPLIST_KEY_SUPublicEDKey = "83CwhlQ4Kk/ZkkllZSAbFuDpQoZKbQP3OT/3sWw94sE=";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
