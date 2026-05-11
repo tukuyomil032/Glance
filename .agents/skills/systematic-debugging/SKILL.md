@@ -79,6 +79,8 @@ You MUST complete each phase before proceeding to the next.
      - Log what data enters component
      - Log what data exits component
      - Verify environment/config propagation
+     - In CI/runner, confirm the expected executable name is actually on `PATH`
+     - Also verify whether the installed artifact is a `cask` / `.app` / archive distribution instead of the expected CLI binary
      - Check state at each layer
 
    Run once to gather evidence showing WHERE it breaks
