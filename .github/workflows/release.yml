@@ -137,9 +137,15 @@ jobs:
             echo "Created: glance-${VERSION}-${ARCH}.dmg"
           done
 
-      - name: Install Sparkle tools
+      - name: Download Sparkle tools
         if: steps.context.outputs.appcast_only == 'true' || steps.tag_check.outputs.exists == 'false'
-        run: brew install sparkle
+        run: |
+          SPARKLE_VERSION="2.9.1"
+          curl -L --fail \
+            "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/Sparkle-${SPARKLE_VERSION}.tar.xz" \
+            -o /tmp/Sparkle-${SPARKLE_VERSION}.tar.xz
+          mkdir -p build/sparkle-tools
+          tar -xJf /tmp/Sparkle-${SPARKLE_VERSION}.tar.xz -C build/sparkle-tools
 
       - name: Download universal DMG from existing release (appcast only)
         if: steps.context.outputs.appcast_only == 'true'
@@ -177,7 +183,13 @@ jobs:
             exit 1
           fi
 
-          if ! UNIVERSAL_SIG=$(echo "$SPARKLE_EDDSA_KEY" | sign_update "$UNIVERSAL_DMG" --ed-key-file -); then
+          SIGN_UPDATE="$(pwd)/build/sparkle-tools/bin/sign_update"
+          if [ ! -x "${SIGN_UPDATE}" ]; then
+            echo "sign_update not found: ${SIGN_UPDATE}" >&2
+            exit 1
+          fi
+
+          if ! UNIVERSAL_SIG=$(echo "$SPARKLE_EDDSA_KEY" | "${SIGN_UPDATE}" "$UNIVERSAL_DMG" --ed-key-file -); then
             echo "sign_update failed." >&2
             exit 1
           fi
