@@ -4,6 +4,16 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      appcast_only:
+        description: "Skip build/release and only regenerate appcast from an existing release asset"
+        required: false
+        default: false
+        type: boolean
+      version:
+        description: "Target version (for example 1.03). Required when appcast_only is true."
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -21,28 +31,41 @@ jobs:
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_26.3.app/Contents/Developer
 
-      - name: Extract version
-        id: version
+      - name: Resolve release context
+        id: context
         run: |
-          VERSION=$(awk '/MARKETING_VERSION/ { gsub(/[; \t]/, "", $3); print $3; exit }' \
-                    glance.xcodeproj/project.pbxproj)
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.appcast_only }}" = "true" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+            if [ -z "${VERSION}" ]; then
+              echo "workflow_dispatch with appcast_only=true requires version input." >&2
+              exit 1
+            fi
+            echo "appcast_only=true (version: ${VERSION})"
+            echo "appcast_only=true" >> "$GITHUB_OUTPUT"
+          else
+            VERSION=$(awk '/MARKETING_VERSION/ { gsub(/[; \t]/, "", $3); print $3; exit }' \
+                      glance.xcodeproj/project.pbxproj)
+            echo "appcast_only=false" >> "$GITHUB_OUTPUT"
+            echo "Detected version from project: ${VERSION}"
+          fi
+
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "Detected version: ${VERSION}"
 
       - name: Check if tag already exists
         id: tag_check
+        if: steps.context.outputs.appcast_only != 'true'
         run: |
-          if git ls-remote --tags origin "refs/tags/${{ steps.version.outputs.tag }}" | grep -q .; then
+          if git ls-remote --tags origin "refs/tags/${{ steps.context.outputs.tag }}" | grep -q .; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
-            echo "Tag ${{ steps.version.outputs.tag }} already exists — skipping release."
+            echo "Tag ${{ steps.context.outputs.tag }} already exists — skipping release."
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
-            echo "Tag ${{ steps.version.outputs.tag }} not found — proceeding with release."
+            echo "Tag ${{ steps.context.outputs.tag }} not found — proceeding with release."
           fi
 
       - name: Build arm64 archive
-        if: steps.tag_check.outputs.exists == 'false'
+        if: steps.context.outputs.appcast_only != 'true' && steps.tag_check.outputs.exists == 'false'
         run: |
           set -o pipefail
           xcodebuild archive \
@@ -59,7 +82,7 @@ jobs:
             SKIP_INSTALL=NO 2>&1 | xcpretty
 
       - name: Build x86_64 archive
-        if: steps.tag_check.outputs.exists == 'false'
+        if: steps.context.outputs.appcast_only != 'true' && steps.tag_check.outputs.exists == 'false'
         run: |
           set -o pipefail
           xcodebuild archive \
@@ -76,7 +99,7 @@ jobs:
             SKIP_INSTALL=NO 2>&1 | xcpretty
 
       - name: Build universal archive
-        if: steps.tag_check.outputs.exists == 'false'
+        if: steps.context.outputs.appcast_only != 'true' && steps.tag_check.outputs.exists == 'false'
         run: |
           set -o pipefail
           xcodebuild archive \
@@ -93,9 +116,9 @@ jobs:
             SKIP_INSTALL=NO 2>&1 | xcpretty
 
       - name: Create DMGs
-        if: steps.tag_check.outputs.exists == 'false'
+        if: steps.context.outputs.appcast_only != 'true' && steps.tag_check.outputs.exists == 'false'
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
+          VERSION="${{ steps.context.outputs.version }}"
           mkdir -p build/dmg
 
           for ARCH in arm64 x86_64 universal; do
@@ -115,19 +138,54 @@ jobs:
           done
 
       - name: Install Sparkle tools
-        if: steps.tag_check.outputs.exists == 'false'
+        if: steps.context.outputs.appcast_only == 'true' || steps.tag_check.outputs.exists == 'false'
         run: brew install sparkle
 
+      - name: Download universal DMG from existing release (appcast only)
+        if: steps.context.outputs.appcast_only == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${{ steps.context.outputs.version }}"
+          mkdir -p build/dmg
+          gh release download "${{ steps.context.outputs.tag }}" \
+            --repo "${{ github.repository }}" \
+            --pattern "glance-${VERSION}-universal.dmg" \
+            --dir build/dmg
+          if [ ! -f "build/dmg/glance-${VERSION}-universal.dmg" ]; then
+            echo "Failed to download universal DMG for ${VERSION}." >&2
+            exit 1
+          fi
+
       - name: Sign DMGs and generate appcast
-        if: steps.tag_check.outputs.exists == 'false'
+        if: steps.context.outputs.appcast_only == 'true' || steps.tag_check.outputs.exists == 'false'
         env:
           SPARKLE_EDDSA_KEY: ${{ secrets.SPARKLE_EDDSA_KEY }}
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
+          set -euo pipefail
+          VERSION="${{ steps.context.outputs.version }}"
           DATE=$(date -R)
 
+          if [ -z "${SPARKLE_EDDSA_KEY}" ]; then
+            echo "SPARKLE_EDDSA_KEY is not set." >&2
+            exit 1
+          fi
+
           UNIVERSAL_DMG="build/dmg/glance-${VERSION}-universal.dmg"
-          UNIVERSAL_SIG=$(echo "$SPARKLE_EDDSA_KEY" | sign_update "$UNIVERSAL_DMG" --ed-key-file - 2>/dev/null || echo "PLACEHOLDER")
+          if [ ! -f "${UNIVERSAL_DMG}" ]; then
+            echo "Universal DMG not found: ${UNIVERSAL_DMG}" >&2
+            exit 1
+          fi
+
+          if ! UNIVERSAL_SIG=$(echo "$SPARKLE_EDDSA_KEY" | sign_update "$UNIVERSAL_DMG" --ed-key-file -); then
+            echo "sign_update failed." >&2
+            exit 1
+          fi
+          if [ -z "${UNIVERSAL_SIG}" ] || [ "${UNIVERSAL_SIG}" = "PLACEHOLDER" ]; then
+            echo "Invalid signature generated: ${UNIVERSAL_SIG}" >&2
+            exit 1
+          fi
+
           UNIVERSAL_SIZE=$(stat -f%z "$UNIVERSAL_DMG")
 
           cat > appcast.xml << APPCAST_EOF
@@ -135,7 +193,7 @@ jobs:
           <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
             <channel>
               <title>glance Updates</title>
-              <link>https://github.com/tukuyomil032/Glance</link>
+              <link>https://github.com/${{ github.repository }}</link>
               <description>Appcast feed for glance updates</description>
               <language>en</language>
               <item>
@@ -144,7 +202,7 @@ jobs:
                 <sparkle:version>${VERSION}</sparkle:version>
                 <sparkle:shortVersionString>${VERSION}</sparkle:shortVersionString>
                 <sparkle:minimumSystemVersion>12.0</sparkle:minimumSystemVersion>
-                <enclosure url="https://github.com/tukuyomil032/Glance/releases/download/v${VERSION}/glance-${VERSION}-universal.dmg"
+                <enclosure url="https://github.com/${{ github.repository }}/releases/download/v${VERSION}/glance-${VERSION}-universal.dmg"
                            type="application/octet-stream"
                            sparkle:edSignature="${UNIVERSAL_SIG}"
                            length="${UNIVERSAL_SIZE}" />
@@ -154,51 +212,55 @@ jobs:
           APPCAST_EOF
 
       - name: Commit appcast.xml
-        if: steps.tag_check.outputs.exists == 'false'
+        if: steps.context.outputs.appcast_only == 'true' || steps.tag_check.outputs.exists == 'false'
         run: |
+          if rg -q "PLACEHOLDER" appcast.xml; then
+            echo "PLACEHOLDER detected in appcast.xml. Abort commit." >&2
+            exit 1
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add appcast.xml
           if git diff --cached --quiet; then
             echo "No appcast changes"
           else
-            git commit -m "chore: update appcast for v${{ steps.version.outputs.version }} [skip ci]"
+            git commit -m "chore: update appcast for v${{ steps.context.outputs.version }} [skip ci]"
           fi
           git push origin HEAD:main
 
       - name: Create and push tag
-        if: steps.tag_check.outputs.exists == 'false'
+        if: steps.context.outputs.appcast_only != 'true' && steps.tag_check.outputs.exists == 'false'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag "${{ steps.version.outputs.tag }}"
-          git push origin "${{ steps.version.outputs.tag }}"
+          git tag "${{ steps.context.outputs.tag }}"
+          git push origin "${{ steps.context.outputs.tag }}"
 
       - name: Create GitHub Release
-        if: steps.tag_check.outputs.exists == 'false'
+        if: steps.context.outputs.appcast_only != 'true' && steps.tag_check.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.version.outputs.tag }}
-          name: glance ${{ steps.version.outputs.tag }}
+          tag_name: ${{ steps.context.outputs.tag }}
+          name: glance ${{ steps.context.outputs.tag }}
           draft: false
           prerelease: false
           body: |
-            ## glance ${{ steps.version.outputs.tag }}
+            ## glance ${{ steps.context.outputs.tag }}
 
             Quick Look Markdown preview extension for macOS.
 
             ### Downloads
             | File | Architecture |
             |------|--------------|
-            | `glance-${{ steps.version.outputs.version }}-universal.dmg` | Apple Silicon + Intel (recommended) |
-            | `glance-${{ steps.version.outputs.version }}-arm64.dmg` | Apple Silicon only |
-            | `glance-${{ steps.version.outputs.version }}-x86_64.dmg` | Intel only |
+            | `glance-${{ steps.context.outputs.version }}-universal.dmg` | Apple Silicon + Intel (recommended) |
+            | `glance-${{ steps.context.outputs.version }}-arm64.dmg` | Apple Silicon only |
+            | `glance-${{ steps.context.outputs.version }}-x86_64.dmg` | Intel only |
 
             ### Install
             1. Open the DMG and drag glance.app to Applications
             2. Launch glance.app once to register the Quick Look extension
             3. Press Space on any `.md` file in Finder
           files: |
-            build/dmg/glance-${{ steps.version.outputs.version }}-arm64.dmg
-            build/dmg/glance-${{ steps.version.outputs.version }}-x86_64.dmg
-            build/dmg/glance-${{ steps.version.outputs.version }}-universal.dmg
+            build/dmg/glance-${{ steps.context.outputs.version }}-arm64.dmg
+            build/dmg/glance-${{ steps.context.outputs.version }}-x86_64.dmg
+            build/dmg/glance-${{ steps.context.outputs.version }}-universal.dmg
