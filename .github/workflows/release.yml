@@ -28,16 +28,24 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_26.3.app/Contents/Developer
-
       - name: Resolve release context
         id: context
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.appcast_only }}" = "true" ]; then
-            VERSION="${{ github.event.inputs.version }}"
+            if [ "${{ github.ref }}" != "refs/heads/main" ]; then
+              echo "appcast_only workflow_dispatch must run on refs/heads/main." >&2
+              exit 1
+            fi
+
+            VERSION="${INPUT_VERSION}"
             if [ -z "${VERSION}" ]; then
               echo "workflow_dispatch with appcast_only=true requires version input." >&2
+              exit 1
+            fi
+            if ! printf '%s' "${VERSION}" | grep -Eq '^[0-9]+(\.[0-9]+)*$'; then
+              echo "Invalid version input: ${VERSION}" >&2
               exit 1
             fi
             echo "appcast_only=true (version: ${VERSION})"
@@ -51,6 +59,10 @@ jobs:
 
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Select Xcode
+        if: steps.context.outputs.appcast_only != 'true'
+        run: sudo xcode-select -s /Applications/Xcode_26.3.app/Contents/Developer
 
       - name: Check if tag already exists
         id: tag_check
@@ -141,9 +153,11 @@ jobs:
         if: steps.context.outputs.appcast_only == 'true' || steps.tag_check.outputs.exists == 'false'
         run: |
           SPARKLE_VERSION="2.9.1"
+          SPARKLE_SHA256="c0dde519fd2a43ddfc6a1eb76aec284d7d888fe281414f9177de3164d98ba4c7"
           curl -L --fail \
             "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/Sparkle-${SPARKLE_VERSION}.tar.xz" \
             -o /tmp/Sparkle-${SPARKLE_VERSION}.tar.xz
+          echo "${SPARKLE_SHA256}  /tmp/Sparkle-${SPARKLE_VERSION}.tar.xz" | shasum -a 256 -c -
           mkdir -p build/sparkle-tools
           tar -xJf /tmp/Sparkle-${SPARKLE_VERSION}.tar.xz -C build/sparkle-tools
 
