@@ -189,7 +189,7 @@ jobs:
             exit 1
           fi
 
-          if ! UNIVERSAL_SIG=$(echo "$SPARKLE_EDDSA_KEY" | "${SIGN_UPDATE}" "$UNIVERSAL_DMG" --ed-key-file -); then
+          if ! UNIVERSAL_SIG=$(echo "$SPARKLE_EDDSA_KEY" | "${SIGN_UPDATE}" -p "$UNIVERSAL_DMG" --ed-key-file -); then
             echo "sign_update failed." >&2
             exit 1
           fi
@@ -226,7 +226,7 @@ jobs:
       - name: Commit appcast.xml
         if: steps.context.outputs.appcast_only == 'true' || steps.tag_check.outputs.exists == 'false'
         run: |
-          if rg -q "PLACEHOLDER" appcast.xml; then
+          if grep -q "PLACEHOLDER" appcast.xml; then
             echo "PLACEHOLDER detected in appcast.xml. Abort commit." >&2
             exit 1
           fi
