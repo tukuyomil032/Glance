@@ -20,7 +20,9 @@ final class glanceUITestsLaunchTests: XCTestCase {
     @MainActor
     func testLaunch() throws {
         let app = XCUIApplication()
+        app.launchEnvironment["GLANCE_UI_TEST_MODE"] = "1"
         app.launch()
+        XCTAssertTrue(app.staticTexts["glance UI Test Host"].waitForExistence(timeout: 5))
 
         // Insert steps here to perform after app launch but before taking a screenshot,
         // such as logging into a test account or navigating somewhere in the app

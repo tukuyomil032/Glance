@@ -19,7 +19,7 @@ final class UpdaterViewModel: ObservableObject {
     init(bundle: Bundle = .main) {
         self.bundle = bundle
         updaterController = SPUStandardUpdaterController(
-            startingUpdater: true,
+            startingUpdater: !AppMetadata.isUITestMode(),
             updaterDelegate: nil,
             userDriverDelegate: nil
         )

@@ -4,6 +4,7 @@ enum AppMetadata {
     static let sparkleFeedURLKey = "SUFeedURL"
     static let sparklePublicEDKeyKey = "SUPublicEDKey"
     static let menuBarAgentKey = "LSUIElement"
+    static let uiTestModeEnvironmentKey = "GLANCE_UI_TEST_MODE"
 
     static func sparkleFeedURL(bundle: Bundle = .main) -> URL? {
         guard let value = bundle.object(forInfoDictionaryKey: sparkleFeedURLKey) as? String else {
@@ -38,5 +39,18 @@ enum AppMetadata {
         default:
             false
         }
+    }
+
+    static func isUITestMode(processInfo: ProcessInfo = .processInfo) -> Bool {
+        isUITestMode(environment: processInfo.environment)
+    }
+
+    static func isUITestMode(environment: [String: String]) -> Bool {
+        guard let rawValue = environment[uiTestModeEnvironmentKey] else {
+            return false
+        }
+
+        let value = rawValue.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return value == "1" || value == "true" || value == "yes"
     }
 }

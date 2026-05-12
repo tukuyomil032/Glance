@@ -26,16 +26,19 @@ final class glanceUITests: XCTestCase {
     func testExample() throws {
         // UI tests must launch the application that they test.
         let app = XCUIApplication()
+        app.launchEnvironment["GLANCE_UI_TEST_MODE"] = "1"
         app.launch()
 
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
+        XCTAssertTrue(app.staticTexts["glance UI Test Host"].waitForExistence(timeout: 5))
     }
 
     @MainActor
     func testLaunchPerformance() throws {
         // This measures how long it takes to launch your application.
         measure(metrics: [XCTApplicationLaunchMetric()]) {
-            XCUIApplication().launch()
+            let app = XCUIApplication()
+            app.launchEnvironment["GLANCE_UI_TEST_MODE"] = "1"
+            app.launch()
         }
     }
 }

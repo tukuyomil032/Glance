@@ -113,6 +113,18 @@ struct AppMetadataTests {
         #expect(!AppMetadata.isMenuBarAgent(bundle: bundle))
     }
 
+    @Test func detectsUITestModeFromEnvironment() {
+        #expect(AppMetadata.isUITestMode(environment: ["GLANCE_UI_TEST_MODE": "1"]))
+        #expect(AppMetadata.isUITestMode(environment: ["GLANCE_UI_TEST_MODE": "true"]))
+        #expect(AppMetadata.isUITestMode(environment: ["GLANCE_UI_TEST_MODE": " yes "]))
+    }
+
+    @Test func uiTestModeDefaultsToDisabled() {
+        #expect(!AppMetadata.isUITestMode(environment: [:]))
+        #expect(!AppMetadata.isUITestMode(environment: ["GLANCE_UI_TEST_MODE": "0"]))
+        #expect(!AppMetadata.isUITestMode(environment: ["GLANCE_UI_TEST_MODE": ""]))
+    }
+
     private func makeBundle(infoDictionary: [String: Any]) throws -> Bundle {
         let rootURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
