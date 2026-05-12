@@ -78,6 +78,13 @@ struct HTMLTemplateTests {
         #expect(html.contains("github-dark-dimmed.min.css"))
     }
 
+    @Test func liquidGlassModeUsesGlassShell() {
+        let html = HTMLTemplate.render(body: "<p>glass</p>", appearanceMode: .liquidGlass)
+        #expect(html.contains("backdrop-filter"))
+        #expect(html.contains("border-radius: 28px"))
+        #expect(html.contains("glass"))
+    }
+
 }
 
 struct AppMetadataTests {
@@ -132,9 +139,48 @@ struct AppMetadataTests {
 struct PreviewPreferencesTests {
 
     @Test func defaultValues() {
-        let prefs = PreviewPreferences(fontSize: 16, maxWidth: 760, language: "system")
+        let prefs = PreviewPreferences(fontSize: 16, maxWidth: 760, language: "system", appearanceMode: .standard)
         #expect(prefs.fontSize == 16)
         #expect(prefs.maxWidth == 760)
         #expect(prefs.language == "system")
+        #expect(prefs.appearanceMode == .standard)
+    }
+
+    @Test func appearanceModeRoundTripsThroughDefaults() {
+        let suiteName = "com.tukuyomi032.glance.tests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)
+        defaults?.removePersistentDomain(forName: suiteName)
+        defer { defaults?.removePersistentDomain(forName: suiteName) }
+
+        var prefs = PreviewPreferences.load(userDefaults: defaults)
+        #expect(prefs.appearanceMode == .standard)
+
+        prefs.appearanceMode = .liquidGlass
+        prefs.save(userDefaults: defaults)
+
+        let reloaded = PreviewPreferences.load(userDefaults: defaults)
+        #expect(reloaded.appearanceMode == .liquidGlass)
+    }
+
+    @Test func savePostsPreferenceChangeNotification() {
+        let suiteName = "com.tukuyomi032.glance.tests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)
+        defaults?.removePersistentDomain(forName: suiteName)
+        defer { defaults?.removePersistentDomain(forName: suiteName) }
+
+        var didNotify = false
+        let token = NotificationCenter.default.addObserver(
+            forName: .previewPreferencesDidChange,
+            object: nil,
+            queue: nil
+        ) { _ in
+            didNotify = true
+        }
+        defer { NotificationCenter.default.removeObserver(token) }
+
+        let prefs = PreviewPreferences(fontSize: 17, maxWidth: 780, language: "en", appearanceMode: .liquidGlass)
+        prefs.save(userDefaults: defaults)
+
+        #expect(didNotify)
     }
 }
