@@ -11,7 +11,7 @@ on:
         default: false
         type: boolean
       version:
-        description: "Target version (for example 1.03). Required when appcast_only is true."
+        description: "Target version (for example 1.04). Required when appcast_only is true."
         required: false
         type: string
 
