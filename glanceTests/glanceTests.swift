@@ -58,6 +58,56 @@ struct HTMLTemplateTests {
         let html = HTMLTemplate.render(body: "", fontSize: 18, maxWidth: 800)
         #expect(html.contains("18px") || html.contains("font-size"))
     }
+
+}
+
+struct AppMetadataTests {
+
+    @Test func readsSparkleMetadataFromBundle() throws {
+        let bundle = try makeBundle(infoDictionary: [
+            "SUFeedURL": "https://example.com/appcast.xml",
+            "SUPublicEDKey": "test-public-key",
+            "LSUIElement": true,
+        ])
+
+        #expect(AppMetadata.sparkleFeedURL(bundle: bundle)?.absoluteString == "https://example.com/appcast.xml")
+        #expect(AppMetadata.sparklePublicEDKey(bundle: bundle) == "test-public-key")
+        #expect(AppMetadata.isMenuBarAgent(bundle: bundle))
+    }
+
+    @Test func trimsEmptyBundleMetadata() throws {
+        let bundle = try makeBundle(infoDictionary: [
+            "SUFeedURL": "   ",
+            "SUPublicEDKey": "",
+            "LSUIElement": "0",
+        ])
+
+        #expect(AppMetadata.sparkleFeedURL(bundle: bundle) == nil)
+        #expect(AppMetadata.sparklePublicEDKey(bundle: bundle) == nil)
+        #expect(!AppMetadata.isMenuBarAgent(bundle: bundle))
+    }
+
+    private func makeBundle(infoDictionary: [String: Any]) throws -> Bundle {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let bundleURL = rootURL.appendingPathComponent("TestBundle.bundle", isDirectory: true)
+        try FileManager.default.createDirectory(at: bundleURL, withIntermediateDirectories: true)
+
+        let infoPlistURL = bundleURL.appendingPathComponent("Info.plist")
+        let plistData = try PropertyListSerialization.data(
+            fromPropertyList: infoDictionary,
+            format: .xml,
+            options: 0
+        )
+        try plistData.write(to: infoPlistURL)
+
+        guard let bundle = Bundle(url: bundleURL) else {
+            Issue.record("Failed to construct bundle at \(bundleURL.path())")
+            throw CocoaError(.fileReadCorruptFile)
+        }
+
+        return bundle
+    }
 }
 
 struct PreviewPreferencesTests {
