@@ -43,6 +43,8 @@ Task tool (general-purpose):
     - Type safety where applicable?
     - DRY without premature abstraction?
     - Edge cases handled?
+    - For AppKit / SwiftUI lifecycle changes, do transient windows, panels, and overlays coordinate cleanly without overlap or orphaned state?
+    - Did the implementation introduce compiler warnings, especially actor-isolation / concurrency warnings that may hard-fail in stricter Swift modes?
 
     **Architecture:**
     - Sound design decisions?
