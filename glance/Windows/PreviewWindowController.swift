@@ -5,36 +5,33 @@ import SwiftUI
 @MainActor
 final class PreviewWindowController: NSWindowController, NSWindowDelegate {
 
-    static var shared: PreviewWindowController?
-
     private var webView: WKWebView?
     private var currentFileURL: URL?
     private var pendingURL: URL?
+    private var appearanceMode: PreviewAppearanceMode = .standard
+    private var preferencesObserver: NSObjectProtocol?
+    private var didCloseHandler: (() -> Void)?
 
     // MARK: - Factory
-
-    static func makeOrBringToFront() -> PreviewWindowController {
-        if let existing = shared {
-            existing.window?.orderFrontRegardless()
-            return existing
-        }
-        let controller = PreviewWindowController()
-        shared = controller
-        controller.windowDidLoad()
-        return controller
-    }
-
-    // MARK: - Init
 
     convenience init() {
         let panel = PreviewWindowController.makePanel()
         self.init(window: panel)
         panel.delegate = self
+        observePreferencesChanges()
+    }
+
+    func setDidCloseHandler(_ handler: @escaping () -> Void) {
+        didCloseHandler = handler
     }
 
     // MARK: - Public API
 
     func loadMarkdownFile(at url: URL) {
+        let prefs = PreviewPreferences.load()
+        appearanceMode = prefs.appearanceMode
+        applyWindowAppearance(for: appearanceMode)
+
         currentFileURL = url
         window?.title = url.lastPathComponent
         guard let webView else {
@@ -53,7 +50,8 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
                 let html = HTMLTemplate.render(body: body,
                                                fontSize: prefs.fontSize,
                                                maxWidth: prefs.maxWidth,
-                                               contentBaseURL: url.deletingLastPathComponent())
+                                               contentBaseURL: url.deletingLastPathComponent(),
+                                               appearanceMode: prefs.appearanceMode)
                 await MainActor.run {
                     webView.loadHTMLString(html, baseURL: Bundle.main.resourceURL)
                     self.window?.orderFrontRegardless()
@@ -63,7 +61,8 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
                     let errorHTML = HTMLTemplate.render(
                         body: "<p style='color:red'>Failed to load file: \(error.localizedDescription)</p>",
                         fontSize: 16,
-                        maxWidth: 760
+                        maxWidth: 760,
+                        appearanceMode: self.appearanceMode
                     )
                     webView.loadHTMLString(errorHTML, baseURL: nil)
                 }
@@ -79,13 +78,24 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
     // MARK: - NSWindowDelegate
 
     func windowWillClose(_ notification: Notification) {
-        PreviewWindowController.shared = nil
+        if let preferencesObserver {
+            NotificationCenter.default.removeObserver(preferencesObserver)
+            self.preferencesObserver = nil
+        }
+        didCloseHandler?()
+        didCloseHandler = nil
     }
 
     // MARK: - Setup
 
     override func windowDidLoad() {
         setupContentView()
+    }
+
+    deinit {
+        if let preferencesObserver {
+            NotificationCenter.default.removeObserver(preferencesObserver)
+        }
     }
 
     private func setupContentView() {
@@ -101,7 +111,36 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
             }
         )
         let host = NSHostingView(rootView: contentView)
+        host.wantsLayer = true
+        host.layer?.backgroundColor = NSColor.clear.cgColor
         panel.contentView = host
+    }
+
+    private func applyWindowAppearance(for mode: PreviewAppearanceMode) {
+        guard let panel = window else { return }
+
+        switch mode {
+        case .standard:
+            panel.isOpaque = true
+            panel.backgroundColor = .windowBackgroundColor
+            panel.titlebarAppearsTransparent = false
+            panel.isMovableByWindowBackground = false
+        case .liquidGlass:
+            panel.isOpaque = false
+            panel.backgroundColor = .clear
+            panel.titlebarAppearsTransparent = true
+            panel.isMovableByWindowBackground = true
+        }
+    }
+
+    private func observePreferencesChanges() {
+        preferencesObserver = NotificationCenter.default.addObserver(
+            forName: .previewPreferencesDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.reloadWithCurrentPreferences()
+        }
     }
 
     // MARK: - Panel factory
@@ -118,10 +157,11 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
             backing: .buffered,
             defer: false
         )
+        panel.tabbingMode = .preferred
+        panel.tabbingIdentifier = "MarkdownPreview"
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.isMovableByWindowBackground = false
         panel.center()
-        panel.setFrameAutosaveName("MarkdownPreviewPanel")
         return panel
     }
 }

@@ -1,7 +1,6 @@
 import AppKit
 import SwiftUI
 import Combine
-import UniformTypeIdentifiers
 import Carbon
 
 @MainActor
@@ -21,12 +20,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
 
     private var statusItem: NSStatusItem?
     private let hotKeyController = GlobalHotKeyController()
+    private let openPanelCoordinator = MarkdownOpenPanelCoordinator()
+    private let previewWindowManager = PreviewWindowManager()
 
     // MARK: - NSApplicationDelegate
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         hotKeyController.delegate = self
         NSApp.setActivationPolicy(AppMetadata.isMenuBarAgent() ? .accessory : .regular)
+        NSWindow.allowsAutomaticWindowTabbing = true
+        LaunchSplashController.showIfNeeded()
         setupStatusItem()
         registerGlobalHotKey()
     }
@@ -54,31 +57,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     // MARK: - File operations
 
     func openMarkdownFile() {
-        let panel = NSOpenPanel()
-        panel.title = String(localized: "Open Markdown File")
-        panel.message = String(localized: "Select a Markdown file to preview")
-        panel.allowedContentTypes = [
-            .init(filenameExtension: "md") ?? .plainText,
-            .init(filenameExtension: "markdown") ?? .plainText,
-            .init(filenameExtension: "mdown") ?? .plainText,
-            .init(filenameExtension: "mkd") ?? .plainText,
-        ]
-        panel.allowsMultipleSelection = false
-        panel.canChooseDirectories = false
-
-        NSApp.activate(ignoringOtherApps: true)
-        panel.orderFrontRegardless()
-
-        panel.begin { [weak self] response in
-            guard response == .OK, let url = panel.url else { return }
+        openPanelCoordinator.openMarkdownFile { [weak self] url in
             self?.openPreview(for: url)
         }
     }
 
     func openPreview(for url: URL) {
-        let controller = PreviewWindowController.makeOrBringToFront()
-        controller.loadMarkdownFile(at: url)
-        controller.showWindow(nil)
+        previewWindowManager.openPreview(for: url)
     }
 
     // MARK: - Status item setup
