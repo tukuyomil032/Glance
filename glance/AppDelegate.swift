@@ -17,8 +17,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     // MARK: - Internal state
 
     let updaterViewModel = UpdaterViewModel()
+    private let isUITestMode = AppMetadata.isUITestMode()
 
     private var statusItem: NSStatusItem?
+    private var uiTestHostWindow: NSWindow?
     private let hotKeyController = GlobalHotKeyController()
     private let openPanelCoordinator = MarkdownOpenPanelCoordinator()
     private let previewWindowManager = PreviewWindowManager()
@@ -26,6 +28,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     // MARK: - NSApplicationDelegate
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        if isUITestMode {
+            NSApp.setActivationPolicy(.regular)
+            NSWindow.allowsAutomaticWindowTabbing = true
+            showUITestHostWindow()
+            return
+        }
+
         hotKeyController.delegate = self
         NSApp.setActivationPolicy(AppMetadata.isMenuBarAgent() ? .accessory : .regular)
         NSWindow.allowsAutomaticWindowTabbing = true
@@ -39,6 +48,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     }
 
     func applicationDidResignActive(_ notification: Notification) {
+        guard !isUITestMode else { return }
         let hasVisibleWindows = NSApp.windows.contains { $0.isVisible }
         if !hasVisibleWindows && AppMetadata.isMenuBarAgent() {
             NSApp.setActivationPolicy(.accessory)
@@ -62,8 +72,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         }
     }
 
+    func openSplitMarkdownFiles() {
+        openPanelCoordinator.openSplitMarkdownFiles { [weak self] urls in
+            guard urls.count == 2 else { return }
+            self?.openSplitPreview(leftURL: urls[0], rightURL: urls[1])
+        }
+    }
+
     func openPreview(for url: URL) {
         previewWindowManager.openPreview(for: url)
+    }
+
+    func openSplitPreview(leftURL: URL, rightURL: URL) {
+        previewWindowManager.openSplitPreview(leftURL: leftURL, rightURL: rightURL)
     }
 
     // MARK: - Status item setup
@@ -95,6 +116,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         )
         openItem.target = self
         menu.addItem(openItem)
+
+        let splitItem = NSMenuItem(
+            title: "Open in Split View…",
+            action: #selector(openSplitMarkdownFilesFromMenu),
+            keyEquivalent: ""
+        )
+        splitItem.target = self
+        menu.addItem(splitItem)
 
         let settingsItem = NSMenuItem(
             title: "Settings…",
@@ -132,10 +161,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         statusItem?.menu = buildStatusMenu()
     }
 
+    private func showUITestHostWindow() {
+        guard uiTestHostWindow == nil else {
+            uiTestHostWindow?.makeKeyAndOrderFront(nil)
+            return
+        }
+
+        let hostView = NSHostingView(
+            rootView: Text("glance UI Test Host")
+                .frame(minWidth: 480, minHeight: 320)
+        )
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 480, height: 320),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "glance UI Test Host"
+        window.center()
+        window.contentView = hostView
+        window.makeKeyAndOrderFront(nil)
+        uiTestHostWindow = window
+    }
+
     // MARK: - @objc selectors
 
     @objc private func openMarkdownFileFromMenu() {
         openMarkdownFile()
+    }
+
+    @objc private func openSplitMarkdownFilesFromMenu() {
+        openSplitMarkdownFiles()
     }
 
     @objc func openSettings() {

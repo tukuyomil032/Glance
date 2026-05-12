@@ -6,7 +6,7 @@ import Testing
 struct MarkdownOpenPanelCoordinatorTests {
     @Test func whileOpen_reusesExistingPanel() {
         var createdPanels: [FakePanel] = []
-        let coordinator = MarkdownOpenPanelCoordinator {
+        let coordinator = MarkdownOpenPanelCoordinator { _ in
             let panel = FakePanel()
             createdPanels.append(panel)
             return panel
@@ -23,7 +23,7 @@ struct MarkdownOpenPanelCoordinatorTests {
 
     @Test func cancel_releasesActivePanel() {
         var createdPanels: [FakePanel] = []
-        let coordinator = MarkdownOpenPanelCoordinator {
+        let coordinator = MarkdownOpenPanelCoordinator { _ in
             let panel = FakePanel()
             createdPanels.append(panel)
             return panel
@@ -40,7 +40,7 @@ struct MarkdownOpenPanelCoordinatorTests {
 
     @Test func ok_releasesAndForwardsSelection() {
         var createdPanels: [FakePanel] = []
-        let coordinator = MarkdownOpenPanelCoordinator {
+        let coordinator = MarkdownOpenPanelCoordinator { _ in
             let panel = FakePanel()
             createdPanels.append(panel)
             return panel
@@ -55,7 +55,7 @@ struct MarkdownOpenPanelCoordinatorTests {
             receivedURL = url
         }
 
-        createdPanels[0].selectedURL = selectedURL
+        createdPanels[0].selectedURLs = [selectedURL]
         createdPanels[0].complete(with: .OK)
         coordinator.openMarkdownFile { _ in }
 
@@ -65,7 +65,7 @@ struct MarkdownOpenPanelCoordinatorTests {
 
     @Test func whileReusingPanel_keepsSingleSelectionDelivery() {
         var createdPanels: [FakePanel] = []
-        let coordinator = MarkdownOpenPanelCoordinator {
+        let coordinator = MarkdownOpenPanelCoordinator { _ in
             let panel = FakePanel()
             createdPanels.append(panel)
             return panel
@@ -81,18 +81,73 @@ struct MarkdownOpenPanelCoordinatorTests {
         }
         coordinator.openMarkdownFile { _ in }
 
-        createdPanels[0].selectedURL = selectedURL
+        createdPanels[0].selectedURLs = [selectedURL]
         createdPanels[0].complete(with: .OK)
 
         #expect(createdPanels.count == 1)
         #expect(receivedCount == 1)
     }
+
+    @Test func splitSelectionRequiresExactlyTwoFiles() {
+        var createdPanels: [FakePanel] = []
+        let coordinator = MarkdownOpenPanelCoordinator { _ in
+            let panel = FakePanel()
+            createdPanels.append(panel)
+            return panel
+        } beforePresent: { action in
+            action()
+        }
+
+        let selectedURLs = [
+            URL(fileURLWithPath: "/tmp/first.md"),
+            URL(fileURLWithPath: "/tmp/second.md")
+        ]
+        var receivedURLs: [URL] = []
+
+        coordinator.openSplitMarkdownFiles { urls in
+            receivedURLs = urls
+        }
+
+        createdPanels[0].selectedURLs = selectedURLs
+        createdPanels[0].complete(with: .OK)
+
+        #expect(createdPanels.count == 1)
+        #expect(receivedURLs == selectedURLs)
+    }
+
+    @Test func splitSelectionRejectsNonPairs() {
+        var createdPanels: [FakePanel] = []
+        let coordinator = MarkdownOpenPanelCoordinator(
+            panelFactory: { _ in
+                let panel = FakePanel()
+                createdPanels.append(panel)
+                return panel
+            },
+            beforePresent: { action in
+                action()
+            },
+            invalidSplitSelectionHandler: {}
+        )
+
+        var receivedURLs: [URL] = []
+
+        coordinator.openSplitMarkdownFiles { urls in
+            receivedURLs = urls
+        }
+
+        createdPanels[0].selectedURLs = [URL(fileURLWithPath: "/tmp/only-one.md")]
+        createdPanels[0].complete(with: .OK)
+
+        #expect(createdPanels.count == 1)
+        #expect(receivedURLs.isEmpty)
+    }
 }
 
 @MainActor
 private final class FakePanel: MarkdownOpenPanelPresenting {
-    var selectedURL: URL?
-    var url: URL? { selectedURL }
+    var selectedURLs: [URL] = []
+    var url: URL? { selectedURLs.first }
+    var urls: [URL] { selectedURLs }
     var orderFrontCount = 0
     private var handler: ((NSApplication.ModalResponse) -> Void)?
 
