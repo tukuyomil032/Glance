@@ -52,9 +52,10 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
                 let body = MarkdownRenderer.render(source)
                 let html = HTMLTemplate.render(body: body,
                                                fontSize: prefs.fontSize,
-                                               maxWidth: prefs.maxWidth)
+                                               maxWidth: prefs.maxWidth,
+                                               contentBaseURL: url.deletingLastPathComponent())
                 await MainActor.run {
-                    webView.loadHTMLString(html, baseURL: url.deletingLastPathComponent())
+                    webView.loadHTMLString(html, baseURL: Bundle.main.resourceURL)
                     self.window?.orderFrontRegardless()
                 }
             } catch {

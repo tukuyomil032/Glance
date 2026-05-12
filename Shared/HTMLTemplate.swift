@@ -1,11 +1,44 @@
+import Foundation
+
 enum HTMLTemplate {
-    nonisolated static func render(body: String, fontSize: Int = 16, maxWidth: Int = 760) -> String {
+    nonisolated static func render(
+        body: String,
+        fontSize: Int = 16,
+        maxWidth: Int = 760,
+        contentBaseURL: URL? = nil
+    ) -> String {
+        let baseTag = contentBaseURL.map { #"<base href="\#($0.absoluteString)">"# } ?? ""
+        let highlightStyleTag = highlightAssetTag(
+            named: "github-dark-dimmed.min",
+            extension: "css",
+            format: "<link rel=\"stylesheet\" href=\"%@\">"
+        )
+        let highlightScriptTag = highlightAssetTag(
+            named: "highlight.min",
+            extension: "js",
+            format: "<script src=\"%@\"></script>"
+        )
+        let highlightBootstrapScript = highlightScriptTag.isEmpty ? "" : """
+        <script>
+        document.addEventListener('DOMContentLoaded', function () {
+          document.querySelectorAll('pre code').forEach(function (block) {
+            if (window.hljs) {
+              window.hljs.highlightElement(block);
+            }
+          });
+        });
+        </script>
         """
+
+        return """
         <!DOCTYPE html>
         <html lang="en">
         <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        \(baseTag)
+        \(highlightStyleTag)
+        \(highlightScriptTag)
         <style>
         :root {
           --bg: #ffffff;
@@ -108,6 +141,10 @@ enum HTMLTemplate {
           overflow-x: auto;
           display: block;
         }
+        .hljs {
+          background: transparent;
+          color: inherit;
+        }
 
         blockquote {
           margin: 0 0 1em 0;
@@ -161,6 +198,7 @@ enum HTMLTemplate {
         ul.task-list li { display: flex; align-items: flex-start; gap: 0.5em; }
         ul.task-list input[type="checkbox"] { margin-top: 0.25em; flex-shrink: 0; }
         </style>
+        \(highlightBootstrapScript)
         </head>
         <body>
         <div class="content">
@@ -169,5 +207,27 @@ enum HTMLTemplate {
         </body>
         </html>
         """
+    }
+
+    private nonisolated static func highlightAssetTag(
+        named name: String,
+        extension fileExtension: String,
+        format: String
+    ) -> String {
+        guard
+            let assetURL = Bundle.main.url(
+                forResource: name,
+                withExtension: fileExtension,
+                subdirectory: "Highlight"
+            ) ?? Bundle.main.url(
+                forResource: name,
+                withExtension: fileExtension
+            )
+        else {
+            return ""
+        }
+
+        let escapedURL = assetURL.absoluteString.replacingOccurrences(of: "\"", with: "&quot;")
+        return String(format: format, escapedURL)
     }
 }

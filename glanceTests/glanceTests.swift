@@ -28,6 +28,11 @@ struct MarkdownRendererTests {
         #expect(html.contains("<pre>") || html.contains("<code>"))
     }
 
+    @Test func codeBlockPreservesLanguageClass() {
+        let html = MarkdownRenderer.render("```swift\nprint(\"hi\")\n```")
+        #expect(html.contains("language-swift"))
+    }
+
     @Test func table() {
         let md = "| A | B |\n|---|---|\n| 1 | 2 |"
         let html = MarkdownRenderer.render(md)
@@ -57,6 +62,20 @@ struct HTMLTemplateTests {
     @Test func fontSizeInjection() {
         let html = HTMLTemplate.render(body: "", fontSize: 18, maxWidth: 800)
         #expect(html.contains("18px") || html.contains("font-size"))
+    }
+
+    @Test func contentBaseURLInjection() {
+        let html = HTMLTemplate.render(
+            body: "<p>test</p>",
+            contentBaseURL: URL(fileURLWithPath: "/tmp/example")
+        )
+        #expect(html.contains("<base href=\"file:///tmp/example\">"))
+    }
+
+    @Test func includesHighlightAssetsWhenBundled() {
+        let html = HTMLTemplate.render(body: "<pre><code class=\"language-swift\">print(\"hi\")</code></pre>")
+        #expect(html.contains("highlight.min.js"))
+        #expect(html.contains("github-dark-dimmed.min.css"))
     }
 
 }
