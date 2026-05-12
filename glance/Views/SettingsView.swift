@@ -73,10 +73,16 @@ struct SettingsView: View {
                     set: { updaterViewModel.automaticallyChecksForUpdates = $0 }
                 ))
 
+                if let missingConfigurationReason = updaterViewModel.missingConfigurationReason {
+                    Text(missingConfigurationReason)
+                        .foregroundStyle(.secondary)
+                        .font(.footnote)
+                }
+
                 Button("Check for Updates") {
                     updaterViewModel.checkForUpdates()
                 }
-                .disabled(!updaterViewModel.canCheckForUpdates)
+                .disabled(!updaterViewModel.canCheckForUpdates || !updaterViewModel.isConfiguredForUpdates)
 
                 Text("Version \(currentVersion)")
                     .foregroundStyle(.secondary)

@@ -26,7 +26,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     // MARK: - NSApplicationDelegate
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApp.setActivationPolicy(.accessory)
+        NSApp.setActivationPolicy(AppMetadata.isMenuBarAgent() ? .accessory : .regular)
         setupStatusItem()
         if requestAccessibilityIfNeeded() {
             registerGlobalHotKey()
@@ -41,7 +41,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
 
     func applicationDidResignActive(_ notification: Notification) {
         let hasVisibleWindows = NSApp.windows.contains { $0.isVisible }
-        if !hasVisibleWindows {
+        if !hasVisibleWindows && AppMetadata.isMenuBarAgent() {
             NSApp.setActivationPolicy(.accessory)
         }
     }
@@ -119,7 +119,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
 
-        NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
         panel.orderFrontRegardless()
 
@@ -226,13 +225,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         }
     }
 
-    @objc private func openSettings() {
+    @objc func openSettings() {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
-        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+        SettingsWindowController.show(rootView: makeSettingsView())
     }
 
     @objc private func checkForUpdates() {
         updaterViewModel.checkForUpdates()
+    }
+
+    private func makeSettingsView() -> some View {
+        SettingsView(
+            appLocale: Binding(
+                get: { self.appLocale },
+                set: { self.appLocale = $0 }
+            ),
+            updaterViewModel: updaterViewModel
+        )
+        .environment(\.locale, appLocale)
     }
 }

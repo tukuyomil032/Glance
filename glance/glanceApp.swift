@@ -6,14 +6,15 @@ struct glanceApp: App {
 
     var body: some Scene {
         Settings {
-            SettingsView(
-                appLocale: Binding(
-                    get: { appDelegate.appLocale },
-                    set: { appDelegate.appLocale = $0 }
-                ),
-                updaterViewModel: appDelegate.updaterViewModel
-            )
-            .environment(\.locale, appDelegate.appLocale)
+            EmptyView()
+        }
+        .commands {
+            CommandGroup(replacing: .appSettings) {
+                Button("Settings…") {
+                    appDelegate.openSettings()
+                }
+                .keyboardShortcut(",", modifiers: .command)
+            }
         }
     }
 }
