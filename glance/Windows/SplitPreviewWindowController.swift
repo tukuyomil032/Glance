@@ -1,16 +1,18 @@
 import AppKit
 
 @MainActor
-final class PreviewWindowController: NSWindowController, NSWindowDelegate {
-    private let paneController = MarkdownPreviewPaneController()
+final class SplitPreviewWindowController: NSWindowController, NSWindowDelegate {
+    private let leadingPaneController = MarkdownPreviewPaneController()
+    private let trailingPaneController = MarkdownPreviewPaneController()
+    private let splitViewController = NSSplitViewController()
     private let transitionCoordinator = PreviewWindowTransitionCoordinator()
     private var didCloseHandler: (() -> Void)?
     private var shouldBypassCloseAnimation = false
 
-    // MARK: - Factory
+    private(set) var loadedFileURLs: [URL] = []
 
     convenience init() {
-        let panel = PreviewWindowController.makePanel()
+        let panel = SplitPreviewWindowController.makePanel()
         self.init(window: panel)
         panel.delegate = self
     }
@@ -19,14 +21,17 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
         didCloseHandler = handler
     }
 
-    // MARK: - Public API
+    func loadMarkdownFiles(at urls: [URL]) {
+        guard urls.count == 2 else {
+            return
+        }
 
-    func loadMarkdownFile(at url: URL) {
+        loadedFileURLs = urls
         let prefs = PreviewPreferences.load()
         PreviewWindowAppearance.apply(to: window, mode: prefs.appearanceMode)
-        window?.title = url.lastPathComponent
-        paneController.loadMarkdownFile(at: url)
-        window?.orderFrontRegardless()
+
+        leadingPaneController.loadMarkdownFile(at: urls[0])
+        trailingPaneController.loadMarkdownFile(at: urls[1])
     }
 
     func prepareForPresentation() {
@@ -37,11 +42,13 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
         transitionCoordinator.animatePresentation(window: window)
     }
 
-    func reloadWithCurrentPreferences() {
-        paneController.reloadWithCurrentPreferences()
+    override func windowDidLoad() {
+        setupContentView()
     }
 
-    // MARK: - NSWindowDelegate
+    func windowWillClose(_ notification: Notification) {
+        finishClose()
+    }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         guard !shouldBypassCloseAnimation else {
@@ -57,19 +64,19 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
         return false
     }
 
-    func windowWillClose(_ notification: Notification) {
-        finishClose()
-    }
-
-    // MARK: - Setup
-
-    override func windowDidLoad() {
-        setupContentView()
-    }
-
     private func setupContentView() {
-        window?.contentViewController = paneController
-        window?.contentView?.wantsLayer = true
+        splitViewController.splitView.isVertical = true
+        splitViewController.splitView.dividerStyle = .thin
+
+        let leadingItem = NSSplitViewItem(viewController: leadingPaneController)
+        leadingItem.minimumThickness = 320
+        let trailingItem = NSSplitViewItem(viewController: trailingPaneController)
+        trailingItem.minimumThickness = 320
+
+        splitViewController.addSplitViewItem(leadingItem)
+        splitViewController.addSplitViewItem(trailingItem)
+        window?.contentViewController = splitViewController
+        splitViewController.view.wantsLayer = true
     }
 
     private func finishClose() {
@@ -79,11 +86,9 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
         didCloseHandler = nil
     }
 
-    // MARK: - Panel factory
-
     private static func makePanel() -> NSPanel {
         let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 760, height: 900),
+            contentRect: NSRect(x: 0, y: 0, width: 1280, height: 900),
             styleMask: [
                 .titled,
                 .closable,

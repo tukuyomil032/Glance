@@ -6,7 +6,7 @@ import Testing
 @MainActor
 struct PreviewWindowManagerTests {
 
-    @Test func openPreviewCreatesIndependentControllers() throws {
+    @Test func openPreviewCreatesIndependentControllers() async throws {
         let manager = PreviewWindowManager()
         let firstURL = try makeMarkdownFile(named: "first.md", contents: "# First")
         let secondURL = try makeMarkdownFile(named: "second.md", contents: "# Second")
@@ -23,6 +23,22 @@ struct PreviewWindowManagerTests {
 
         firstController.window?.close()
         secondController.window?.close()
+        await waitUntil { manager.openWindowCount == 0 }
+    }
+
+    @Test func openSplitPreviewLoadsBothFiles() async throws {
+        let manager = PreviewWindowManager()
+        let firstURL = try makeMarkdownFile(named: "split-left.md", contents: "# Left")
+        let secondURL = try makeMarkdownFile(named: "split-right.md", contents: "# Right")
+
+        let controller = manager.openSplitPreview(leftURL: firstURL, rightURL: secondURL)
+
+        #expect(manager.openWindowCount == 1)
+        #expect(controller.loadedFileURLs == [firstURL, secondURL])
+        #expect(controller.window != nil)
+
+        controller.window?.close()
+        await waitUntil { manager.openWindowCount == 0 }
     }
 
     @Test func closingOneWindowRemovesOnlyThatController() async throws {
@@ -36,14 +52,13 @@ struct PreviewWindowManagerTests {
         #expect(manager.openWindowCount == 2)
 
         firstController.window?.close()
-        await Task.yield()
+        await waitUntil { manager.openWindowCount == 1 }
 
         #expect(manager.openWindowCount == 1)
         #expect(secondController.window != nil)
 
         secondController.window?.close()
-        await Task.yield()
-        #expect(manager.openWindowCount == 0)
+        await waitUntil { manager.openWindowCount == 0 }
     }
 
     private func makeMarkdownFile(named name: String, contents: String) throws -> URL {
@@ -56,5 +71,17 @@ struct PreviewWindowManagerTests {
         )
         try contents.write(to: url, atomically: true, encoding: .utf8)
         return url
+    }
+
+    @MainActor
+    private func waitUntil(
+        timeout: Duration = .seconds(2),
+        _ predicate: @escaping @MainActor () -> Bool
+    ) async {
+        let deadline = ContinuousClock().now.advanced(by: timeout)
+
+        while !predicate() && ContinuousClock().now < deadline {
+            try? await Task.sleep(for: .milliseconds(20))
+        }
     }
 }
