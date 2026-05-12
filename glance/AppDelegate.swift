@@ -1,8 +1,8 @@
 import AppKit
 import SwiftUI
 import Combine
-import ApplicationServices
 import UniformTypeIdentifiers
+import Carbon
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
@@ -20,23 +20,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     let updaterViewModel = UpdaterViewModel()
 
     private var statusItem: NSStatusItem?
-    private var hotKeyMonitor: Any?
-    private var accessibilityCheckTimer: Timer?
+    private let hotKeyController = GlobalHotKeyController()
 
     // MARK: - NSApplicationDelegate
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        hotKeyController.delegate = self
         NSApp.setActivationPolicy(AppMetadata.isMenuBarAgent() ? .accessory : .regular)
         setupStatusItem()
-        if requestAccessibilityIfNeeded() {
-            registerGlobalHotKey()
-        }
+        registerGlobalHotKey()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        if let monitor = hotKeyMonitor {
-            NSEvent.removeMonitor(monitor)
-        }
+        hotKeyController.unregister()
     }
 
     func applicationDidResignActive(_ notification: Notification) {
@@ -46,62 +42,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         }
     }
 
-    // MARK: - Accessibility permission
-
-    @discardableResult
-    func requestAccessibilityIfNeeded() -> Bool {
-        let options: NSDictionary = [
-            kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true
-        ]
-        let trusted = AXIsProcessTrustedWithOptions(options)
-        if !trusted {
-            scheduleAccessibilityStatusCheck()
-        }
-        return trusted
-    }
-
-    private func scheduleAccessibilityStatusCheck() {
-        var checkCount = 0
-        accessibilityCheckTimer = Timer.scheduledTimer(
-            withTimeInterval: 0.5,
-            repeats: true
-        ) { [weak self] timer in
-            checkCount += 1
-            if AXIsProcessTrusted() {
-                timer.invalidate()
-                Task { @MainActor [weak self] in
-                    self?.accessibilityCheckTimer = nil
-                    self?.registerGlobalHotKey()
-                    self?.refreshStatusMenu()
-                }
-            } else if checkCount > 120 {
-                timer.invalidate()
-                Task { @MainActor [weak self] in
-                    self?.accessibilityCheckTimer = nil
-                }
-            }
-        }
-    }
-
     // MARK: - Global hotkey
 
     func registerGlobalHotKey() {
-        guard AXIsProcessTrusted() else { return }
-
-        if let existing = hotKeyMonitor {
-            NSEvent.removeMonitor(existing)
-            hotKeyMonitor = nil
-        }
-
-        hotKeyMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { event in
-            let onlyCommand = event.modifierFlags
-                .intersection(.deviceIndependentFlagsMask) == .command
-            if event.keyCode == 5 && onlyCommand {
-                Task { @MainActor [weak self] in
-                    self?.openMarkdownFile()
-                }
-            }
-        }
+        _ = hotKeyController.register(
+            keyCode: UInt32(kVK_ANSI_G),
+            modifiers: UInt32(cmdKey)
+        )
     }
 
     // MARK: - File operations
@@ -164,19 +111,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         openItem.target = self
         menu.addItem(openItem)
 
-        menu.addItem(.separator())
-
-        if !AXIsProcessTrusted() {
-            let axItem = NSMenuItem(
-                title: "Grant Accessibility Permission…",
-                action: #selector(openAccessibilitySettings),
-                keyEquivalent: ""
-            )
-            axItem.target = self
-            menu.addItem(axItem)
-            menu.addItem(.separator())
-        }
-
         let settingsItem = NSMenuItem(
             title: "Settings…",
             action: #selector(openSettings),
@@ -219,12 +153,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         openMarkdownFile()
     }
 
-    @objc private func openAccessibilitySettings() {
-        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-            NSWorkspace.shared.open(url)
-        }
-    }
-
     @objc func openSettings() {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
@@ -244,5 +172,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
             updaterViewModel: updaterViewModel
         )
         .environment(\.locale, appLocale)
+    }
+}
+
+extension AppDelegate: GlobalHotKeyControllerDelegate {
+    func globalHotKeyControllerDidTrigger(_ controller: GlobalHotKeyController) {
+        openMarkdownFile()
     }
 }

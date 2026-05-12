@@ -9,7 +9,7 @@
 │  │ glanceApp    │   │ AppDelegate           │   │
 │  │ (@main)      │   │ - NSStatusBar icon    │   │
 │  │ Settings     │   │ - Global hotkey (Cmd+G)   │
-│  │ scene        │   │ - Accessibility mgmt  │   │
+│  │ scene        │   │ - App activation policy   │   │
 │  └──────────────┘   └────────────┬─────────┘   │
 │                                  │ open file    │
 │  ┌───────────────┐               │              │
@@ -58,13 +58,13 @@ SwiftUI の `@main` エントリーポイント。Settings シーンを定義し
 
 **ファイル**: `glance/AppDelegate.swift`
 
-メニューバーアイコン・グローバルホットキー・Accessibility 権限管理を担当。
+メニューバーアイコン・グローバルホットキー・アプリ前面化制御を担当。
 
 **機能**:
 - `NSStatusBar.system.statusItem` でメニューバーアイコン表示
-- `AXIsProcessTrustedWithOptions` で Accessibility 権限確認
 - グローバルホットキー Cmd+G → ファイルオープンダイアログ → `PreviewWindowController` を起動
-- メニューに「Open File…」「Settings」「Quit」を表示
+- Carbon Hot Key で Cmd+G を登録
+- メニューに「Open Markdown File…」「Settings…」「Quit glance」を表示
 
 ### 3.3 PreviewWindowController
 
@@ -241,7 +241,7 @@ struct PreviewPreferences {
 | テスト | 手順 |
 |--------|------|
 | ホットキー起動 | Cmd+G → ファイルダイアログ表示 → .md 選択 → プレビュー表示 |
-| メニューバー操作 | メニューバーアイコン → Open File… → プレビュー表示 |
+| メニューバー操作 | メニューバーアイコン → Open Markdown File… → プレビュー表示 |
 | ダークモード | システム設定切替 → 配色変化を確認 |
 | 設定反映 | フォントサイズ変更 → プレビューウィンドウで反映確認 |
 | アップデート確認 | Settings → Check for Updates ボタン押下 |
