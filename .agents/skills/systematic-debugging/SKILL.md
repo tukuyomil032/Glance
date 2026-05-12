@@ -92,6 +92,8 @@ You MUST complete each phase before proceeding to the next.
    - Do not stop at `project.pbxproj` or source files when debugging bundle metadata or packaged resources.
    - Inspect the built `.app/Contents/Info.plist` and `.app/Contents/Resources` directly to confirm the actual shipped keys and files.
    - With File System Synchronized Groups, suspect resource flattening or unintended Copy Bundle Resources behavior when source layout and app contents disagree.
+   - For macOS UI-test failures on menu bar apps or agents (`LSUIElement` / accessory activation), verify whether the app launches without a normal window, and whether startup-only side effects (splash windows, updater boot, global hotkeys, status items) need an explicit UI-test mode.
+   - When `glanceUITests-Runner` or similar runners time out while enabling automation, compare normal startup vs UI-test startup and confirm the test process actually injects the intended launch environment / arguments.
 
    **Example (multi-layer system):**
    ```bash
