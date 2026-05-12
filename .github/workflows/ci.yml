@@ -30,6 +30,14 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             build 2>&1 | xcpretty
 
+      - name: Verify app bundle metadata
+        run: |
+          APP_PATH=$(fd -td glance.app ~/Library/Developer/Xcode/DerivedData | head -n 1)
+          test -n "$APP_PATH"
+          test "$(plutil -extract LSUIElement raw "$APP_PATH/Contents/Info.plist")" = "true"
+          test "$(plutil -extract SUFeedURL raw "$APP_PATH/Contents/Info.plist")" = "https://raw.githubusercontent.com/tukuyomil032/Glance/main/appcast.xml"
+          test "$(plutil -extract SUPublicEDKey raw "$APP_PATH/Contents/Info.plist")" = "83CwhlQ4Kk/ZkkllZSAbFuDpQoZKbQP3OT/3sWw94sE="
+
       - name: Test
         run: |
           set -o pipefail

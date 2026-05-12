@@ -139,6 +139,10 @@ jobs:
             mkdir -p "$STAGING"
             cp -R "$APP" "$STAGING/glance.app"
 
+            codesign --force --deep --sign - --timestamp=none "$STAGING/glance.app"
+            codesign --verify --deep --strict --verbose=4 "$STAGING/glance.app"
+            spctl --assess --type execute --verbose=4 "$STAGING/glance.app"
+
             hdiutil create \
               -volname "glance" \
               -srcfolder "$STAGING" \
