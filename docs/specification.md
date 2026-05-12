@@ -107,7 +107,7 @@ Sparkle フレームワークの `SPUUpdater` をラップした `ObservableObje
 
 **ファイル**: `Shared/MarkdownRenderer.swift`
 
-Ink (JohnSundell/Ink) の薄いラッパー。Markdown テキストを HTML fragment に変換。
+Ink (JohnSundell/Ink) の薄いラッパー。Markdown テキストを HTML fragment に変換し、fenced code block の language class を保持する。
 
 ```swift
 enum MarkdownRenderer {
@@ -121,7 +121,7 @@ enum MarkdownRenderer {
 
 **ファイル**: `Shared/HTMLTemplate.swift`
 
-HTML fragment を完全な HTML ドキュメントにラップする。CSS を `<style>` タグとしてインライン埋め込み。
+HTML fragment を完全な HTML ドキュメントにラップする。CSS を `<style>` タグとしてインライン埋め込みし、同梱した `highlight.js` を読み込む。
 
 ```swift
 enum HTMLTemplate {
@@ -230,6 +230,7 @@ struct PreviewPreferences {
 | `testHeadingRendering` | `# Title` → `<h1>Title</h1>` |
 | `testBoldItalic` | `**bold**` → `<strong>bold</strong>` |
 | `testCodeBlock` | fenced code → `<pre><code>` |
+| `testCodeBlockPreservesLanguageClass` | fenced code の言語情報保持 |
 | `testTable` | pipe table → `<table>` |
 | `testEmptyInput` | 空文字列 → 空 body の valid HTML |
 | `testUTF8` | 日本語・絵文字の正常レンダリング |
@@ -252,8 +253,8 @@ struct PreviewPreferences {
 
 ### 8.1 直接配布
 
-1. Developer ID Application 証明書で署名
-2. `xcrun notarytool submit` で公証
-3. `xcrun stapler staple` でチケット添付
+1. archive から staging app を作成
+2. staging app を再署名し `codesign --verify --deep --strict` を通す
+3. `spctl --assess` で実行可能性を確認
 4. `appcast.xml` を更新（Sparkle アップデートフィード）
 5. `.dmg` で配布（Applications へドラッグ）

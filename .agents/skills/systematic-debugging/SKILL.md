@@ -88,6 +88,11 @@ You MUST complete each phase before proceeding to the next.
    THEN investigate that specific component
    ```
 
+   **Xcode / app bundle specific check:**
+   - Do not stop at `project.pbxproj` or source files when debugging bundle metadata or packaged resources.
+   - Inspect the built `.app/Contents/Info.plist` and `.app/Contents/Resources` directly to confirm the actual shipped keys and files.
+   - With File System Synchronized Groups, suspect resource flattening or unintended Copy Bundle Resources behavior when source layout and app contents disagree.
+
    **Example (multi-layer system):**
    ```bash
    # Layer 1: Workflow

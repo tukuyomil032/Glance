@@ -18,6 +18,7 @@ glance is a macOS menu bar app that renders Markdown files with rich formatting.
 
 - Global hotkey **Cmd+G** to open any Markdown file without switching apps
 - Renders headings, emphasis, lists, blockquotes, tables, and fenced code blocks
+- Syntax highlighting for fenced code blocks
 - Automatic dark mode support via CSS `prefers-color-scheme`
 - Configurable font size (14 / 16 / 18 px) and content max width (500–900 px)
 - Language support: English and Japanese
@@ -32,14 +33,15 @@ Download the latest release from [GitHub Releases](https://github.com/tukuyomi03
 
 1. Open the DMG and drag **glance** to your Applications folder.
 2. Launch glance — the icon appears in your menu bar.
-3. Grant **Accessibility** permission when prompted (required for the global hotkey).
+3. Press **Cmd+G** from anywhere to open a Markdown file.
+4. If Gatekeeper warns that the app is from an unidentified developer, open **System Settings → Privacy & Security** and allow it once.
 
 ## Usage
 
 ### Opening a file
 
 - Press **Cmd+G** from anywhere to open a file dialog
-- Or click the glance icon in the menu bar and select **Open File…**
+- Or click the glance icon in the menu bar and select **Open Markdown File…**
 
 ### Adjusting settings
 
@@ -52,18 +54,44 @@ Press **Cmd+,** or go to **glance → Settings** to configure:
 
 ## Build from Source
 
-**Prerequisites:** Xcode 16+
+**Prerequisites:** Xcode 16+, [just](https://github.com/casey/just)
 
 ```bash
 # Clone the repository
 git clone https://github.com/tukuyomi032/glance.git
 cd glance
 
+# Check local setup
+just doctor
+
 # Build
-xcodebuild -project glance.xcodeproj -scheme glance -configuration Debug build
+just build
 
 # Run tests
-xcodebuild -project glance.xcodeproj -scheme glance -configuration Debug test
+just test
+
+# Launch the built app
+just run
+```
+
+Release helpers:
+
+```bash
+# Remove local build artifacts
+just clean
+
+# Build a release DMG
+just dmg arm64 1.03
+```
+
+Command help:
+
+```bash
+# Show the full command list
+just help
+
+# Show detailed help for a specific recipe
+just help dmg
 ```
 
 ## Tech Stack
