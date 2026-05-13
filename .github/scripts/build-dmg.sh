@@ -30,7 +30,7 @@ run_xcodebuild xcodebuild archive \
   CODE_SIGN_IDENTITY="-" \
   CODE_SIGNING_REQUIRED=NO \
   CODE_SIGNING_ALLOWED=NO \
-  SKIP_INSTALL=NO
+  SKIP_INSTALL=NO | bundle exec xcpretty -c
 
 APP="build/glance-${ARCH}.xcarchive/Products/Applications/glance.app"
 STAGING="build/dmg-staging-${ARCH}"

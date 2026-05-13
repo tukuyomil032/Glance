@@ -17,6 +17,6 @@ run_xcodebuild xcodebuild \
   CODE_SIGN_IDENTITY="-" \
   CODE_SIGNING_REQUIRED=NO \
   CODE_SIGNING_ALLOWED=NO \
-  build
+  build | bundle exec xcpretty -c
 
 success "Debug build finished: build/DerivedData/Build/Products/Debug/glance.app"
