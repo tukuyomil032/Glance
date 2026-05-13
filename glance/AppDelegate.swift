@@ -23,7 +23,48 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     private var uiTestHostWindow: NSWindow?
     private let hotKeyController = GlobalHotKeyController()
     private let openPanelCoordinator = MarkdownOpenPanelCoordinator()
-    private let previewWindowManager = PreviewWindowManager()
+    private let previewWindowManager: PreviewWindowManager
+    private let previewActivationController: PreviewWindowActivationController
+    private let previewOpener: @MainActor (URL) -> Void
+    private let splitPreviewOpener: @MainActor (URL, URL) -> Void
+
+    override init() {
+        let previewWindowManager = PreviewWindowManager()
+        self.previewWindowManager = previewWindowManager
+        previewActivationController = PreviewWindowActivationController()
+        previewOpener = { url in
+            previewWindowManager.openPreview(for: url)
+        }
+        splitPreviewOpener = { leftURL, rightURL in
+            previewWindowManager.openSplitPreview(leftURL: leftURL, rightURL: rightURL)
+        }
+        super.init()
+    }
+
+    init(
+        previewActivationController: PreviewWindowActivationController,
+        previewOpener: @escaping @MainActor (URL) -> Void,
+        splitPreviewOpener: @escaping @MainActor (URL, URL) -> Void
+    ) {
+        self.previewWindowManager = PreviewWindowManager()
+        self.previewActivationController = previewActivationController
+        self.previewOpener = previewOpener
+        self.splitPreviewOpener = splitPreviewOpener
+        super.init()
+    }
+
+    init(
+        previewActivationController: PreviewWindowActivationController,
+        previewOpener: @escaping @MainActor (URL) -> Void,
+        splitPreviewOpener: @escaping @MainActor (URL, URL) -> Void,
+        previewWindowManager: PreviewWindowManager
+    ) {
+        self.previewWindowManager = previewWindowManager
+        self.previewActivationController = previewActivationController
+        self.previewOpener = previewOpener
+        self.splitPreviewOpener = splitPreviewOpener
+        super.init()
+    }
 
     // MARK: - NSApplicationDelegate
 
@@ -31,7 +72,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         if isUITestMode {
             NSApp.setActivationPolicy(.regular)
             NSWindow.allowsAutomaticWindowTabbing = true
-            showUITestHostWindow()
+            launchUITestMode()
             return
         }
 
@@ -50,9 +91,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     func applicationDidResignActive(_ notification: Notification) {
         guard !isUITestMode else { return }
         let hasVisibleWindows = NSApp.windows.contains { $0.isVisible }
-        if !hasVisibleWindows && AppMetadata.isMenuBarAgent() {
-            NSApp.setActivationPolicy(.accessory)
-        }
+        previewActivationController.restoreAccessoryPolicyAfterResign(
+            hasVisibleWindows: hasVisibleWindows,
+            hasOpenPreviewWindows: previewWindowManager.hasOpenPreviewWindows
+        )
     }
 
     // MARK: - Global hotkey
@@ -80,11 +122,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     }
 
     func openPreview(for url: URL) {
-        previewWindowManager.openPreview(for: url)
+        previewActivationController.prepareForPreviewPresentation()
+        previewOpener(url)
+        previewActivationController.activateAfterPreviewPresentation()
     }
 
     func openSplitPreview(leftURL: URL, rightURL: URL) {
-        previewWindowManager.openSplitPreview(leftURL: leftURL, rightURL: rightURL)
+        previewActivationController.prepareForPreviewPresentation()
+        splitPreviewOpener(leftURL, rightURL)
+        previewActivationController.activateAfterPreviewPresentation()
     }
 
     // MARK: - Status item setup
@@ -182,6 +228,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         window.contentView = hostView
         window.makeKeyAndOrderFront(nil)
         uiTestHostWindow = window
+    }
+
+    private func launchUITestMode() {
+        if let urls = AppMetadata.uiTestSplitPreviewURLs() {
+            openSplitPreview(leftURL: urls[0], rightURL: urls[1])
+            return
+        }
+
+        if let url = AppMetadata.uiTestPreviewURL() {
+            openPreview(for: url)
+            return
+        }
+
+        showUITestHostWindow()
     }
 
     // MARK: - @objc selectors
