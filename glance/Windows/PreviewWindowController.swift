@@ -6,13 +6,23 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
     private let transitionCoordinator = PreviewWindowTransitionCoordinator()
     private var didCloseHandler: (() -> Void)?
     private var shouldBypassCloseAnimation = false
+    private var hasConfiguredContentView = false
 
     // MARK: - Factory
 
     convenience init() {
-        let panel = PreviewWindowController.makePanel()
-        self.init(window: panel)
-        panel.delegate = self
+        let window = PreviewWindowController.makeWindow()
+        self.init(window: window)
+        window.delegate = self
+    }
+
+    override init(window: NSWindow?) {
+        super.init(window: window)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        nil
     }
 
     func setDidCloseHandler(_ handler: @escaping () -> Void) {
@@ -22,6 +32,7 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
     // MARK: - Public API
 
     func loadMarkdownFile(at url: URL) {
+        ensureContentConfigured()
         let prefs = PreviewPreferences.load()
         PreviewWindowAppearance.apply(to: window, mode: prefs.appearanceMode)
         window?.title = url.lastPathComponent
@@ -30,6 +41,7 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
     }
 
     func prepareForPresentation() {
+        ensureContentConfigured()
         transitionCoordinator.prepareForPresentation(window: window)
     }
 
@@ -39,6 +51,10 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
 
     func reloadWithCurrentPreferences() {
         paneController.reloadWithCurrentPreferences()
+    }
+
+    var isClosingPreviewWindow: Bool {
+        transitionCoordinator.isClosing
     }
 
     // MARK: - NSWindowDelegate
@@ -63,14 +79,25 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
 
     // MARK: - Setup
 
-    override func windowDidLoad() {
-        setupContentView()
+    func ensureContentConfigured() {
+        guard !hasConfiguredContentView, let window else {
+            return
+        }
+        hasConfiguredContentView = true
+        window.contentViewController = paneController
+        paneController.loadViewIfNeeded()
+        window.contentView?.wantsLayer = true
     }
 
-    private func setupContentView() {
-        window?.contentViewController = paneController
-        window?.contentView?.wantsLayer = true
+    #if DEBUG
+    var isPreviewPaneViewLoaded: Bool {
+        paneController.isViewLoaded
     }
+
+    var hasPendingPreviewLoad: Bool {
+        paneController.hasPendingLoad
+    }
+    #endif
 
     private func finishClose() {
         transitionCoordinator.resetAfterClose()
@@ -79,10 +106,10 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
         didCloseHandler = nil
     }
 
-    // MARK: - Panel factory
+    // MARK: - Window factory
 
-    private static func makePanel() -> NSPanel {
-        let panel = NSPanel(
+    private static func makeWindow() -> NSWindow {
+        let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 760, height: 900),
             styleMask: [
                 .titled,
@@ -93,11 +120,11 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
             backing: .buffered,
             defer: false
         )
-        panel.tabbingMode = .preferred
-        panel.tabbingIdentifier = "MarkdownPreview"
-        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        panel.isMovableByWindowBackground = false
-        panel.center()
-        return panel
+        window.tabbingMode = .disallowed
+        window.tabbingIdentifier = "MarkdownPreview"
+        window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        window.isMovableByWindowBackground = false
+        window.center()
+        return window
     }
 }

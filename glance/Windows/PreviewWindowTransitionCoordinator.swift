@@ -6,10 +6,13 @@ final class PreviewWindowTransitionCoordinator {
     private let presentationScale: CGFloat
     private let animationDuration: TimeInterval
     private var isPreparingPresentation = false
-    private var isClosing = false
+    private(set) var isClosing = false
     private var targetPresentationFrame: NSRect?
 
-    init(presentationScale: CGFloat = 0.96, animationDuration: TimeInterval = 0.18) {
+    init(
+        presentationScale: CGFloat = 0.96,
+        animationDuration: TimeInterval = 0.18
+    ) {
         self.presentationScale = presentationScale
         self.animationDuration = animationDuration
     }
@@ -22,11 +25,17 @@ final class PreviewWindowTransitionCoordinator {
         targetPresentationFrame = targetFrame
         let startFrame = scaledFrame(from: targetFrame, scale: presentationScale)
         window.setFrame(startFrame, display: false)
-        window.alphaValue = 0
+        window.alphaValue = 1
     }
 
     func animatePresentation(window: NSWindow?) {
-        guard let window, let targetPresentationFrame else { return }
+        guard let window else { return }
+        guard let targetPresentationFrame else {
+            window.alphaValue = 1
+            window.setFrame(window.frame, display: true)
+            isPreparingPresentation = false
+            return
+        }
         NSAnimationContext.runAnimationGroup { context in
             context.duration = animationDuration
             context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
@@ -34,7 +43,11 @@ final class PreviewWindowTransitionCoordinator {
             window.animator().setFrame(targetPresentationFrame, display: true)
         } completionHandler: {
             Task { @MainActor in
+                // Normalize final state to avoid drift from interrupted/rounded animations.
+                window.alphaValue = 1
+                window.setFrame(targetPresentationFrame, display: true)
                 self.isPreparingPresentation = false
+                self.targetPresentationFrame = nil
             }
         }
     }

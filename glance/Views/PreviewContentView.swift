@@ -2,25 +2,18 @@ import SwiftUI
 import WebKit
 
 struct PreviewContentView: View {
-    let onWebViewCreated: (WKWebView) -> Void
+    let webView: WKWebView
 
     var body: some View {
-        WebViewWrapper(onCreated: onWebViewCreated)
+        WebViewWrapper(webView: webView)
             .ignoresSafeArea()
     }
 }
 
 struct WebViewWrapper: NSViewRepresentable {
-    let onCreated: (WKWebView) -> Void
+    let webView: WKWebView
 
-    func makeNSView(context: Context) -> WKWebView {
-        let config = WKWebViewConfiguration()
-        config.suppressesIncrementalRendering = false
-        let wv = WKWebView(frame: .zero, configuration: config)
-        wv.setValue(false, forKey: "drawsBackground")
-        onCreated(wv)
-        return wv
-    }
+    func makeNSView(context: Context) -> WKWebView { webView }
 
     func updateNSView(_ nsView: WKWebView, context: Context) {}
 }

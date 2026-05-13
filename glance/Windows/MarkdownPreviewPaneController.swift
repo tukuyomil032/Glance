@@ -39,19 +39,18 @@ final class MarkdownPreviewPaneController: NSViewController {
     }
 
     override func loadView() {
-        let contentView = PreviewContentView(
-            onWebViewCreated: { [weak self] webView in
-                self?.webView = webView
-                if let pendingURL = self?.pendingURL {
-                    self?.pendingURL = nil
-                    self?.performLoad(url: pendingURL, into: webView)
-                }
-            }
-        )
+        let webView = Self.makeWebView()
+        self.webView = webView
+        let contentView = PreviewContentView(webView: webView)
         let host = NSHostingView(rootView: contentView)
         host.wantsLayer = true
         host.layer?.backgroundColor = NSColor.clear.cgColor
         view = host
+        flushPendingLoadIfNeeded()
+    }
+
+    var hasPendingLoad: Bool {
+        pendingURL != nil
     }
 
     deinit {
@@ -88,6 +87,23 @@ final class MarkdownPreviewPaneController: NSViewController {
                 }
             }
         }
+    }
+
+    private func flushPendingLoadIfNeeded() {
+        guard let webView, let pendingURL else {
+            return
+        }
+
+        self.pendingURL = nil
+        performLoad(url: pendingURL, into: webView)
+    }
+
+    private static func makeWebView() -> WKWebView {
+        let config = WKWebViewConfiguration()
+        config.suppressesIncrementalRendering = false
+        let webView = WKWebView(frame: .zero, configuration: config)
+        webView.setValue(false, forKey: "drawsBackground")
+        return webView
     }
 
     private func observePreferencesChanges() {

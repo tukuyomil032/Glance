@@ -8,13 +8,23 @@ final class SplitPreviewWindowController: NSWindowController, NSWindowDelegate {
     private let transitionCoordinator = PreviewWindowTransitionCoordinator()
     private var didCloseHandler: (() -> Void)?
     private var shouldBypassCloseAnimation = false
+    private var hasConfiguredContentView = false
 
     private(set) var loadedFileURLs: [URL] = []
 
     convenience init() {
-        let panel = SplitPreviewWindowController.makePanel()
-        self.init(window: panel)
-        panel.delegate = self
+        let window = SplitPreviewWindowController.makeWindow()
+        self.init(window: window)
+        window.delegate = self
+    }
+
+    override init(window: NSWindow?) {
+        super.init(window: window)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        nil
     }
 
     func setDidCloseHandler(_ handler: @escaping () -> Void) {
@@ -26,15 +36,18 @@ final class SplitPreviewWindowController: NSWindowController, NSWindowDelegate {
             return
         }
 
+        ensureContentConfigured()
         loadedFileURLs = urls
         let prefs = PreviewPreferences.load()
         PreviewWindowAppearance.apply(to: window, mode: prefs.appearanceMode)
+        window?.title = "\(urls[0].lastPathComponent) + \(urls[1].lastPathComponent)"
 
         leadingPaneController.loadMarkdownFile(at: urls[0])
         trailingPaneController.loadMarkdownFile(at: urls[1])
     }
 
     func prepareForPresentation() {
+        ensureContentConfigured()
         transitionCoordinator.prepareForPresentation(window: window)
     }
 
@@ -42,8 +55,8 @@ final class SplitPreviewWindowController: NSWindowController, NSWindowDelegate {
         transitionCoordinator.animatePresentation(window: window)
     }
 
-    override func windowDidLoad() {
-        setupContentView()
+    var isClosingPreviewWindow: Bool {
+        transitionCoordinator.isClosing
     }
 
     func windowWillClose(_ notification: Notification) {
@@ -64,7 +77,11 @@ final class SplitPreviewWindowController: NSWindowController, NSWindowDelegate {
         return false
     }
 
-    private func setupContentView() {
+    func ensureContentConfigured() {
+        guard !hasConfiguredContentView, let window else {
+            return
+        }
+        hasConfiguredContentView = true
         splitViewController.splitView.isVertical = true
         splitViewController.splitView.dividerStyle = .thin
 
@@ -75,9 +92,22 @@ final class SplitPreviewWindowController: NSWindowController, NSWindowDelegate {
 
         splitViewController.addSplitViewItem(leadingItem)
         splitViewController.addSplitViewItem(trailingItem)
-        window?.contentViewController = splitViewController
+        window.contentViewController = splitViewController
+        splitViewController.loadViewIfNeeded()
+        leadingPaneController.loadViewIfNeeded()
+        trailingPaneController.loadViewIfNeeded()
         splitViewController.view.wantsLayer = true
     }
+
+    #if DEBUG
+    var arePreviewPaneViewsLoaded: [Bool] {
+        [leadingPaneController.isViewLoaded, trailingPaneController.isViewLoaded]
+    }
+
+    var hasPendingPreviewLoads: [Bool] {
+        [leadingPaneController.hasPendingLoad, trailingPaneController.hasPendingLoad]
+    }
+    #endif
 
     private func finishClose() {
         transitionCoordinator.resetAfterClose()
@@ -86,8 +116,8 @@ final class SplitPreviewWindowController: NSWindowController, NSWindowDelegate {
         didCloseHandler = nil
     }
 
-    private static func makePanel() -> NSPanel {
-        let panel = NSPanel(
+    private static func makeWindow() -> NSWindow {
+        let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 1280, height: 900),
             styleMask: [
                 .titled,
@@ -98,11 +128,11 @@ final class SplitPreviewWindowController: NSWindowController, NSWindowDelegate {
             backing: .buffered,
             defer: false
         )
-        panel.tabbingMode = .preferred
-        panel.tabbingIdentifier = "MarkdownPreview"
-        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        panel.isMovableByWindowBackground = false
-        panel.center()
-        return panel
+        window.tabbingMode = .disallowed
+        window.tabbingIdentifier = "MarkdownPreview"
+        window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        window.isMovableByWindowBackground = false
+        window.center()
+        return window
     }
 }
