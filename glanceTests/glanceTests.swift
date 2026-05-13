@@ -7,6 +7,7 @@
 
 import Testing
 import Foundation
+import AppKit
 @testable import glance
 
 struct MarkdownRendererTests {
@@ -125,6 +126,26 @@ struct AppMetadataTests {
         #expect(!AppMetadata.isUITestMode(environment: ["GLANCE_UI_TEST_MODE": ""]))
     }
 
+    @Test func readsUITestPreviewPathsFromEnvironment() {
+        let singlePath = "/tmp/glance-single.md"
+        let leftPath = "/tmp/glance-left.md"
+        let rightPath = "/tmp/glance-right.md"
+
+        #expect(AppMetadata.uiTestPreviewURL(environment: [
+            "GLANCE_UI_TEST_PREVIEW_PATH": " \(singlePath) ",
+        ]) == URL(fileURLWithPath: singlePath))
+        #expect(AppMetadata.uiTestSplitPreviewURLs(environment: [
+            "GLANCE_UI_TEST_SPLIT_PREVIEW_LEFT_PATH": leftPath,
+            "GLANCE_UI_TEST_SPLIT_PREVIEW_RIGHT_PATH": rightPath,
+        ]) == [URL(fileURLWithPath: leftPath), URL(fileURLWithPath: rightPath)])
+        #expect(AppMetadata.uiTestPreviewURL(environment: [
+            "GLANCE_UI_TEST_PREVIEW_PATH": " ",
+        ]) == nil)
+        #expect(AppMetadata.uiTestSplitPreviewURLs(environment: [
+            "GLANCE_UI_TEST_SPLIT_PREVIEW_LEFT_PATH": leftPath,
+        ]) == nil)
+    }
+
     private func makeBundle(infoDictionary: [String: Any]) throws -> Bundle {
         let rootURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
@@ -145,6 +166,115 @@ struct AppMetadataTests {
         }
 
         return bundle
+    }
+}
+
+@MainActor
+struct AppDelegatePreviewActivationTests {
+
+    @Test func openPreviewPromotesMenuBarAgentAroundOpeningWindow() {
+        var appliedPolicies: [NSApplication.ActivationPolicy] = []
+        var activationRequests: [Bool] = []
+        var openedURL: URL?
+        let url = URL(fileURLWithPath: "/tmp/preview.md")
+
+        let delegate = AppDelegate(
+            previewActivationController: PreviewWindowActivationController(
+                isMenuBarAgent: { true },
+                setActivationPolicy: { appliedPolicies.append($0) },
+                activate: { activationRequests.append($0) }
+            ),
+            previewOpener: { openedURL = $0 },
+            splitPreviewOpener: { _, _ in
+                Issue.record("Unexpected split preview open")
+            }
+        )
+
+        delegate.openPreview(for: url)
+
+        #expect(appliedPolicies == [.regular])
+        #expect(activationRequests == [true, true])
+        #expect(openedURL == url)
+    }
+
+    @Test func openSplitPreviewPromotesMenuBarAgentAroundOpeningWindow() {
+        var appliedPolicies: [NSApplication.ActivationPolicy] = []
+        var activationRequests: [Bool] = []
+        var openedURLs: [URL] = []
+        let leftURL = URL(fileURLWithPath: "/tmp/left.md")
+        let rightURL = URL(fileURLWithPath: "/tmp/right.md")
+
+        let delegate = AppDelegate(
+            previewActivationController: PreviewWindowActivationController(
+                isMenuBarAgent: { true },
+                setActivationPolicy: { appliedPolicies.append($0) },
+                activate: { activationRequests.append($0) }
+            ),
+            previewOpener: { _ in
+                Issue.record("Unexpected single preview open")
+            },
+            splitPreviewOpener: { left, right in
+                openedURLs = [left, right]
+            }
+        )
+
+        delegate.openSplitPreview(leftURL: leftURL, rightURL: rightURL)
+
+        #expect(appliedPolicies == [.regular])
+        #expect(activationRequests == [true, true])
+        #expect(openedURLs == [leftURL, rightURL])
+    }
+
+    @Test func openPreviewSkipsPolicyPromotionForRegularApps() {
+        var appliedPolicies: [NSApplication.ActivationPolicy] = []
+        var activationRequests: [Bool] = []
+        var openedURL: URL?
+        let url = URL(fileURLWithPath: "/tmp/regular.md")
+
+        let delegate = AppDelegate(
+            previewActivationController: PreviewWindowActivationController(
+                isMenuBarAgent: { false },
+                setActivationPolicy: { appliedPolicies.append($0) },
+                activate: { activationRequests.append($0) }
+            ),
+            previewOpener: { openedURL = $0 },
+            splitPreviewOpener: { _, _ in
+                Issue.record("Unexpected split preview open")
+            }
+        )
+
+        delegate.openPreview(for: url)
+
+        #expect(appliedPolicies.isEmpty)
+        #expect(activationRequests.isEmpty)
+        #expect(openedURL == url)
+    }
+
+    @Test func resignActiveReturnsAccessoryOnlyWhenNoPreviewControllersRemain() {
+        var appliedPolicies: [NSApplication.ActivationPolicy] = []
+        let controller = PreviewWindowActivationController(
+            isMenuBarAgent: { true },
+            setActivationPolicy: { appliedPolicies.append($0) },
+            activate: { _ in }
+        )
+
+        controller.restoreAccessoryPolicyAfterResign(
+            hasVisibleWindows: false,
+            hasOpenPreviewWindows: true
+        )
+        controller.restoreAccessoryPolicyAfterResign(
+            hasVisibleWindows: true,
+            hasOpenPreviewWindows: false
+        )
+
+        #expect(appliedPolicies.isEmpty)
+
+        controller.restoreAccessoryPolicyAfterResign(
+            hasVisibleWindows: false,
+            hasOpenPreviewWindows: false
+        )
+
+        #expect(appliedPolicies == [.accessory])
     }
 }
 
