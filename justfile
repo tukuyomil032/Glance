@@ -114,27 +114,27 @@ help recipe="":
 
 # Build the app in Debug mode
 build:
-  @.github/scripts/build-debug.sh
+  .github/scripts/build-debug.sh
 
 # Run glanceTests in Debug mode
 test:
-  @.github/scripts/test.sh
+  .github/scripts/test.sh
 
 # Launch the built Debug app
 run:
-  @.github/scripts/run-app.sh
+  .github/scripts/run-app.sh
 
 # Remove local build artifacts
 clean:
-  @.github/scripts/clean.sh
+  .github/scripts/clean.sh
 
 # Check required local tools and environment
 doctor:
-  @.github/scripts/doctor.sh
+  .github/scripts/doctor.sh
 
 # Build a release DMG (arch: arm64|x86_64|universal, version: e.g. 1.03)
 dmg arch version:
-  @.github/scripts/build-dmg.sh "{{arch}}" "{{version}}"
+  .github/scripts/build-dmg.sh "{{arch}}" "{{version}}"
 
 # Run local CI flow: doctor -> build -> test
 ci: doctor build test

@@ -145,3 +145,6 @@ fastlane/test_output
 
 ## User settings
 xcuserdata/
+
+# Ruby bundler
+.bundle/**
