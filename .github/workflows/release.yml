@@ -136,12 +136,17 @@ jobs:
           for ARCH in arm64 x86_64 universal; do
             APP="build/glance-${ARCH}.xcarchive/Products/Applications/glance.app"
             STAGING="build/dmg-staging-${ARCH}"
+            rm -rf "$STAGING"
             mkdir -p "$STAGING"
             cp -R "$APP" "$STAGING/glance.app"
 
+            # Keep code signature verification strict; invalid bundles must fail fast.
             codesign --force --deep --sign - --timestamp=none "$STAGING/glance.app"
             codesign --verify --deep --strict --verbose=4 "$STAGING/glance.app"
-            spctl --assess --type execute --verbose=4 "$STAGING/glance.app"
+            # Gatekeeper assessment may reject ad-hoc signed CI artifacts; warn and continue.
+            if ! spctl --assess --type execute --verbose=4 "$STAGING/glance.app"; then
+              echo "::warning::spctl rejected ad-hoc staged app for ${ARCH}; continuing DMG creation."
+            fi
 
             hdiutil create \
               -volname "glance" \
