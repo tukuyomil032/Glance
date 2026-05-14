@@ -172,9 +172,9 @@ struct AppMetadataTests {
 @MainActor
 struct AppDelegatePreviewActivationTests {
 
-    @Test func openPreviewPromotesMenuBarAgentAroundOpeningWindow() {
+    @Test func openPreviewPromotesMenuBarAgentBeforeOpeningWindow() async {
         var appliedPolicies: [NSApplication.ActivationPolicy] = []
-        var activationRequests: [Bool] = []
+        var activationCount = 0
         var openedURL: URL?
         let url = URL(fileURLWithPath: "/tmp/preview.md")
 
@@ -182,7 +182,7 @@ struct AppDelegatePreviewActivationTests {
             previewActivationController: PreviewWindowActivationController(
                 isMenuBarAgent: { true },
                 setActivationPolicy: { appliedPolicies.append($0) },
-                activate: { activationRequests.append($0) }
+                activate: { activationCount += 1 }
             ),
             previewOpener: { openedURL = $0 },
             splitPreviewOpener: { _, _ in
@@ -191,15 +191,17 @@ struct AppDelegatePreviewActivationTests {
         )
 
         delegate.openPreview(for: url)
+        await Task.yield()
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
 
         #expect(appliedPolicies == [.regular])
-        #expect(activationRequests == [true, true])
+        #expect(activationCount == 1)
         #expect(openedURL == url)
     }
 
-    @Test func openSplitPreviewPromotesMenuBarAgentAroundOpeningWindow() {
+    @Test func openSplitPreviewPromotesMenuBarAgentBeforeOpeningWindow() async {
         var appliedPolicies: [NSApplication.ActivationPolicy] = []
-        var activationRequests: [Bool] = []
+        var activationCount = 0
         var openedURLs: [URL] = []
         let leftURL = URL(fileURLWithPath: "/tmp/left.md")
         let rightURL = URL(fileURLWithPath: "/tmp/right.md")
@@ -208,7 +210,7 @@ struct AppDelegatePreviewActivationTests {
             previewActivationController: PreviewWindowActivationController(
                 isMenuBarAgent: { true },
                 setActivationPolicy: { appliedPolicies.append($0) },
-                activate: { activationRequests.append($0) }
+                activate: { activationCount += 1 }
             ),
             previewOpener: { _ in
                 Issue.record("Unexpected single preview open")
@@ -219,15 +221,17 @@ struct AppDelegatePreviewActivationTests {
         )
 
         delegate.openSplitPreview(leftURL: leftURL, rightURL: rightURL)
+        await Task.yield()
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
 
         #expect(appliedPolicies == [.regular])
-        #expect(activationRequests == [true, true])
+        #expect(activationCount == 1)
         #expect(openedURLs == [leftURL, rightURL])
     }
 
     @Test func openPreviewSkipsPolicyPromotionForRegularApps() {
         var appliedPolicies: [NSApplication.ActivationPolicy] = []
-        var activationRequests: [Bool] = []
+        var activationCount = 0
         var openedURL: URL?
         let url = URL(fileURLWithPath: "/tmp/regular.md")
 
@@ -235,7 +239,7 @@ struct AppDelegatePreviewActivationTests {
             previewActivationController: PreviewWindowActivationController(
                 isMenuBarAgent: { false },
                 setActivationPolicy: { appliedPolicies.append($0) },
-                activate: { activationRequests.append($0) }
+                activate: { activationCount += 1 }
             ),
             previewOpener: { openedURL = $0 },
             splitPreviewOpener: { _, _ in
@@ -246,7 +250,7 @@ struct AppDelegatePreviewActivationTests {
         delegate.openPreview(for: url)
 
         #expect(appliedPolicies.isEmpty)
-        #expect(activationRequests.isEmpty)
+        #expect(activationCount == 0)
         #expect(openedURL == url)
     }
 
@@ -255,7 +259,7 @@ struct AppDelegatePreviewActivationTests {
         let controller = PreviewWindowActivationController(
             isMenuBarAgent: { true },
             setActivationPolicy: { appliedPolicies.append($0) },
-            activate: { _ in }
+            activate: { }
         )
 
         controller.restoreAccessoryPolicyAfterResign(
