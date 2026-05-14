@@ -1,2 +1,5 @@
 .agents/** linguist-generated
 .claude/** linguisted-generated
+
+*.js linguist-detectable=true linguist-language=JavaScript
+*.css linguist-detectable=true linguist-language=CSS
