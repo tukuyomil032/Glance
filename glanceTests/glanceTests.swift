@@ -270,12 +270,18 @@ struct AppDelegatePreviewActivationTests {
             hasVisibleWindows: true,
             hasOpenPreviewWindows: false
         )
+        controller.restoreAccessoryPolicyAfterResign(
+            hasVisibleWindows: false,
+            hasOpenPreviewWindows: false,
+            isPendingPresentation: true
+        )
 
         #expect(appliedPolicies.isEmpty)
 
         controller.restoreAccessoryPolicyAfterResign(
             hasVisibleWindows: false,
-            hasOpenPreviewWindows: false
+            hasOpenPreviewWindows: false,
+            isPendingPresentation: false
         )
 
         #expect(appliedPolicies == [.accessory])

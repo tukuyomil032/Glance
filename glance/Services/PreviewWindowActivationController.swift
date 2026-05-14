@@ -33,8 +33,15 @@ struct PreviewWindowActivationController {
         }
     }
 
-    func restoreAccessoryPolicyAfterResign(hasVisibleWindows: Bool, hasOpenPreviewWindows: Bool) {
-        guard isMenuBarAgent(), !hasVisibleWindows, !hasOpenPreviewWindows else {
+    func restoreAccessoryPolicyAfterResign(
+        hasVisibleWindows: Bool,
+        hasOpenPreviewWindows: Bool,
+        isPendingPresentation: Bool = false
+    ) {
+        guard isMenuBarAgent(),
+              !hasVisibleWindows,
+              !hasOpenPreviewWindows,
+              !isPendingPresentation else {
             return
         }
 

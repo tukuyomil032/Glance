@@ -27,6 +27,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     private let previewActivationController: PreviewWindowActivationController
     private let previewOpener: @MainActor (URL) -> Void
     private let splitPreviewOpener: @MainActor (URL, URL) -> Void
+    private var isPendingPreviewPresentation = false
 
     override init() {
         let previewWindowManager = PreviewWindowManager()
@@ -93,7 +94,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         let hasVisibleWindows = NSApp.windows.contains { $0.isVisible }
         previewActivationController.restoreAccessoryPolicyAfterResign(
             hasVisibleWindows: hasVisibleWindows,
-            hasOpenPreviewWindows: previewWindowManager.hasOpenPreviewWindows
+            hasOpenPreviewWindows: previewWindowManager.hasOpenPreviewWindows,
+            isPendingPresentation: isPendingPreviewPresentation
         )
     }
 
@@ -122,14 +124,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     }
 
     func openPreview(for url: URL) {
+        isPendingPreviewPresentation = true
         previewActivationController.prepareForPreviewPresentation { [weak self] in
             self?.previewOpener(url)
+            self?.isPendingPreviewPresentation = false
         }
     }
 
     func openSplitPreview(leftURL: URL, rightURL: URL) {
+        isPendingPreviewPresentation = true
         previewActivationController.prepareForPreviewPresentation { [weak self] in
             self?.splitPreviewOpener(leftURL, rightURL)
+            self?.isPendingPreviewPresentation = false
         }
     }
 
