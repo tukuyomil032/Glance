@@ -89,6 +89,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     // MARK: - File operations
 
     func openMarkdownFile() {
+        if AppMetadata.isMenuBarAgent() {
+            NSApp.setActivationPolicy(.regular)
+            NSRunningApplication.current.activate()
+        }
         openPanelCoordinator.openMarkdownFile { [weak self] url in
             self?.openPreview(for: url)
         }
