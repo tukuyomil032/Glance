@@ -1,15 +1,14 @@
 import AppKit
+import os
 
-#if DEBUG
 @MainActor
 enum PreviewWindowDiagnostics {
-    private static let environmentKey = "GLANCE_PREVIEW_WINDOW_DEBUG"
+    private static let logger = Logger(
+        subsystem: "com.tukuyomi032.glance",
+        category: "preview-window"
+    )
 
     static func dump(event: String, window: NSWindow?) {
-        guard isEnabled else {
-            return
-        }
-
         let keyWindowTitle = NSApp.keyWindow?.title ?? "nil"
         let mainWindowTitle = NSApp.mainWindow?.title ?? "nil"
         let windowTitle = window?.title ?? "nil"
@@ -17,25 +16,16 @@ enum PreviewWindowDiagnostics {
         let screen = window?.screen?.localizedName ?? "nil"
         let visibleFrame = window?.screen.map { NSStringFromRect($0.visibleFrame) } ?? "nil"
         let tabCount = window?.tabGroup?.windows.count ?? 0
-        let isSelectedTab = window.map { candidate in
-            candidate.tabGroup?.selectedWindow === candidate
-        } ?? false
+        let isSelectedTab = window.map { $0.tabGroup?.selectedWindow === $0 } ?? false
         let occlusionState = window?.occlusionState.rawValue ?? 0
+        let isVisible = window?.isVisible ?? false
+        let isMiniaturized = window?.isMiniaturized ?? false
+        let alpha = window?.alphaValue ?? -1
+        let policy = NSApp.activationPolicy().rawValue
+        let active = NSApp.isActive
 
-        NSLog(
-            "[glance preview] event=\(event) activationPolicy=\(NSApp.activationPolicy()) "
-                + "appActive=\(NSApp.isActive) keyWindow=\(keyWindowTitle) mainWindow=\(mainWindowTitle) "
-                + "windowTitle=\(windowTitle) visible=\(window?.isVisible ?? false) "
-                + "miniaturized=\(window?.isMiniaturized ?? false) alpha=\(window?.alphaValue ?? -1) "
-                + "frame=\(frame) screen=\(screen) visibleFrame=\(visibleFrame) "
-                + "occlusion=\(occlusionState) tabCount=\(tabCount) selectedTab=\(isSelectedTab)"
+        logger.debug(
+            "[glance preview] event=\(event) policy=\(policy) active=\(active) key=\(keyWindowTitle) main=\(mainWindowTitle) title=\(windowTitle) visible=\(isVisible) mini=\(isMiniaturized) alpha=\(alpha) frame=\(frame) screen=\(screen) vf=\(visibleFrame) occ=\(occlusionState) tabs=\(tabCount) sel=\(isSelectedTab)"
         )
     }
-
-    private static var isEnabled: Bool {
-        let rawValue = ProcessInfo.processInfo.environment[environmentKey] ?? ""
-        let value = rawValue.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        return value == "1" || value == "true" || value == "yes"
-    }
 }
-#endif

@@ -122,15 +122,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     }
 
     func openPreview(for url: URL) {
-        previewActivationController.prepareForPreviewPresentation()
-        previewOpener(url)
-        previewActivationController.activateAfterPreviewPresentation()
+        previewActivationController.prepareForPreviewPresentation { [weak self] in
+            self?.previewOpener(url)
+        }
     }
 
     func openSplitPreview(leftURL: URL, rightURL: URL) {
-        previewActivationController.prepareForPreviewPresentation()
-        splitPreviewOpener(leftURL, rightURL)
-        previewActivationController.activateAfterPreviewPresentation()
+        previewActivationController.prepareForPreviewPresentation { [weak self] in
+            self?.splitPreviewOpener(leftURL, rightURL)
+        }
     }
 
     // MARK: - Status item setup
@@ -256,7 +256,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
 
     @objc func openSettings() {
         NSApp.setActivationPolicy(.regular)
-        NSApp.activate(ignoringOtherApps: true)
+        NSRunningApplication.current.activate()
         SettingsWindowController.show(rootView: makeSettingsView())
     }
 

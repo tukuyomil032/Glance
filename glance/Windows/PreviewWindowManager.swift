@@ -39,14 +39,14 @@ final class PreviewWindowManager {
             self?.controllers.removeAll { $0 === controller }
         }
 
+        ensureRegularActivationPolicy()
         controller.loadWindow()
         controller.ensureContentConfigured()
-        restoreWindowPresentationState(controller.window, orderFront: false)
         controller.prepareForPresentation()
         tabWindowIfNeeded(controller.window)
         controller.showWindow(nil)
         controller.window?.makeKeyAndOrderFront(nil)
-        restoreWindowPresentationState(controller.window)
+        controller.window?.orderFrontRegardless()
         logPreviewWindowState("openPreview", window: controller.window)
         controller.animatePresentation()
     }
@@ -57,14 +57,14 @@ final class PreviewWindowManager {
             self?.controllers.removeAll { $0 === controller }
         }
 
+        ensureRegularActivationPolicy()
         controller.loadWindow()
         controller.ensureContentConfigured()
-        restoreWindowPresentationState(controller.window, orderFront: false)
         controller.prepareForPresentation()
         tabWindowIfNeeded(controller.window)
         controller.showWindow(nil)
         controller.window?.makeKeyAndOrderFront(nil)
-        restoreWindowPresentationState(controller.window)
+        controller.window?.orderFrontRegardless()
         logPreviewWindowState("openSplitPreview", window: controller.window)
         controller.animatePresentation()
     }
@@ -181,10 +181,17 @@ final class PreviewWindowManager {
         return min(max(value, minValue), maxValue)
     }
 
+    private func ensureRegularActivationPolicy() {
+        guard AppMetadata.isMenuBarAgent(), NSApp.activationPolicy() != .regular else {
+            return
+        }
+
+        NSApp.setActivationPolicy(.regular)
+        NSRunningApplication.current.activate()
+    }
+
     private func logPreviewWindowState(_ event: String, window: NSWindow?) {
-        #if DEBUG
         PreviewWindowDiagnostics.dump(event: event, window: window)
-        #endif
     }
 }
 

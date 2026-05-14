@@ -70,7 +70,7 @@ final class MarkdownOpenPanelCoordinator {
         onSelect: @escaping ([URL]) -> Void
     ) {
         if let activePanel {
-            NSApp.activate(ignoringOtherApps: true)
+            NSRunningApplication.current.activate()
             activePanel.orderFrontRegardless()
             return
         }
@@ -91,7 +91,7 @@ final class MarkdownOpenPanelCoordinator {
         activePanel = panel
         isPresentingPanel = false
 
-        NSApp.activate(ignoringOtherApps: true)
+        NSRunningApplication.current.activate()
         panel.orderFrontRegardless()
         panel.begin { [weak self, weak panel] response in
             guard let self else { return }

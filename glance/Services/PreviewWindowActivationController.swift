@@ -4,15 +4,15 @@ import AppKit
 struct PreviewWindowActivationController {
     let isMenuBarAgent: @MainActor () -> Bool
     let setActivationPolicy: @MainActor (NSApplication.ActivationPolicy) -> Void
-    let activate: @MainActor (Bool) -> Void
+    let activate: @MainActor () -> Void
 
     init(
         isMenuBarAgent: @escaping @MainActor () -> Bool = { AppMetadata.isMenuBarAgent() },
         setActivationPolicy: @escaping @MainActor (NSApplication.ActivationPolicy) -> Void = {
             NSApp.setActivationPolicy($0)
         },
-        activate: @escaping @MainActor (Bool) -> Void = {
-            NSApp.activate(ignoringOtherApps: $0)
+        activate: @escaping @MainActor () -> Void = {
+            NSRunningApplication.current.activate()
         }
     ) {
         self.isMenuBarAgent = isMenuBarAgent
@@ -20,21 +20,17 @@ struct PreviewWindowActivationController {
         self.activate = activate
     }
 
-    func prepareForPreviewPresentation() {
+    func prepareForPreviewPresentation(then continuation: @escaping @MainActor () -> Void) {
         guard isMenuBarAgent() else {
+            continuation()
             return
         }
 
         setActivationPolicy(.regular)
-        activate(true)
-    }
-
-    func activateAfterPreviewPresentation() {
-        guard isMenuBarAgent() else {
-            return
+        DispatchQueue.main.async {
+            self.activate()
+            continuation()
         }
-
-        activate(true)
     }
 
     func restoreAccessoryPolicyAfterResign(hasVisibleWindows: Bool, hasOpenPreviewWindows: Bool) {

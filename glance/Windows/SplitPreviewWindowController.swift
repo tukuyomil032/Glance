@@ -130,7 +130,7 @@ final class SplitPreviewWindowController: NSWindowController, NSWindowDelegate {
         )
         window.tabbingMode = .disallowed
         window.tabbingIdentifier = "MarkdownPreview"
-        window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        window.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
         window.isMovableByWindowBackground = false
         window.center()
         return window
