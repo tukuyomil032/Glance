@@ -13,7 +13,6 @@ struct SettingsView: View {
     @State private var fontSize: Int = PreviewPreferences.load().fontSize
     @State private var maxWidth: Double = Double(PreviewPreferences.load().maxWidth)
     @State private var language: String = PreviewPreferences.load().language
-    @State private var appearanceMode: PreviewAppearanceMode = PreviewPreferences.load().appearanceMode
 
     private var currentVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
@@ -40,18 +39,6 @@ struct SettingsView: View {
             }
 
             Section("Preview") {
-                Picker("Window Style", selection: $appearanceMode) {
-                    ForEach(PreviewAppearanceMode.allCases, id: \.self) { mode in
-                        Text(mode.displayName).tag(mode)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .onChange(of: appearanceMode) { _, newValue in
-                    var prefs = PreviewPreferences.load()
-                    prefs.appearanceMode = newValue
-                    prefs.save()
-                }
-
                 Picker("Font Size", selection: $fontSize) {
                     Text("Small").tag(14)
                     Text("Medium").tag(16)
@@ -103,7 +90,7 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 360, height: 430)
+        .frame(width: 360, height: 380)
     }
 }
 

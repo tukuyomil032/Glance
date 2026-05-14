@@ -7,7 +7,6 @@ final class MarkdownPreviewPaneController: NSViewController {
     private var webView: WKWebView?
     private var currentFileURL: URL?
     private var pendingURL: URL?
-    private var appearanceMode: PreviewAppearanceMode = .standard
     private var preferencesObserver: NSObjectProtocol?
 
     init() {
@@ -21,8 +20,6 @@ final class MarkdownPreviewPaneController: NSViewController {
     }
 
     func loadMarkdownFile(at url: URL) {
-        let prefs = PreviewPreferences.load()
-        appearanceMode = prefs.appearanceMode
         currentFileURL = url
 
         guard let webView else {
@@ -69,8 +66,7 @@ final class MarkdownPreviewPaneController: NSViewController {
                     body: body,
                     fontSize: prefs.fontSize,
                     maxWidth: prefs.maxWidth,
-                    contentBaseURL: url.deletingLastPathComponent(),
-                    appearanceMode: prefs.appearanceMode
+                    contentBaseURL: url.deletingLastPathComponent()
                 )
                 _ = await MainActor.run {
                     webView.loadHTMLString(html, baseURL: Bundle.main.resourceURL)
@@ -78,10 +74,7 @@ final class MarkdownPreviewPaneController: NSViewController {
             } catch {
                 _ = await MainActor.run {
                     let errorHTML = HTMLTemplate.render(
-                        body: "<p style='color:red'>Failed to load file: \(error.localizedDescription)</p>",
-                        fontSize: 16,
-                        maxWidth: 760,
-                        appearanceMode: self.appearanceMode
+                        body: "<p style='color:red'>Failed to load file: \(error.localizedDescription)</p>"
                     )
                     webView.loadHTMLString(errorHTML, baseURL: nil)
                 }

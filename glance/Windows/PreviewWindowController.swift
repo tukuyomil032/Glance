@@ -3,9 +3,7 @@ import AppKit
 @MainActor
 final class PreviewWindowController: NSWindowController, NSWindowDelegate {
     private let paneController = MarkdownPreviewPaneController()
-    private let transitionCoordinator = PreviewWindowTransitionCoordinator()
     private var didCloseHandler: (() -> Void)?
-    private var shouldBypassCloseAnimation = false
     private var hasConfiguredContentView = false
 
     // MARK: - Factory
@@ -33,48 +31,21 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
 
     func loadMarkdownFile(at url: URL) {
         ensureContentConfigured()
-        let prefs = PreviewPreferences.load()
-        PreviewWindowAppearance.apply(to: window, mode: prefs.appearanceMode)
         window?.title = url.lastPathComponent
         paneController.loadMarkdownFile(at: url)
+        window?.makeKeyAndOrderFront(nil)
         window?.orderFrontRegardless()
-    }
-
-    func prepareForPresentation() {
-        ensureContentConfigured()
-        transitionCoordinator.prepareForPresentation(window: window)
-    }
-
-    func animatePresentation() {
-        transitionCoordinator.animatePresentation(window: window)
     }
 
     func reloadWithCurrentPreferences() {
         paneController.reloadWithCurrentPreferences()
     }
 
-    var isClosingPreviewWindow: Bool {
-        transitionCoordinator.isClosing
-    }
-
     // MARK: - NSWindowDelegate
 
-    func windowShouldClose(_ sender: NSWindow) -> Bool {
-        guard !shouldBypassCloseAnimation else {
-            return true
-        }
-
-        transitionCoordinator.beginCloseAnimation(window: window) { [weak self] in
-            guard let self else { return }
-            self.shouldBypassCloseAnimation = true
-            defer { self.shouldBypassCloseAnimation = false }
-            self.window?.performClose(nil)
-        }
-        return false
-    }
-
     func windowWillClose(_ notification: Notification) {
-        finishClose()
+        didCloseHandler?()
+        didCloseHandler = nil
     }
 
     // MARK: - Setup
@@ -99,16 +70,39 @@ final class PreviewWindowController: NSWindowController, NSWindowDelegate {
     }
     #endif
 
-    private func finishClose() {
-        transitionCoordinator.resetAfterClose()
-        shouldBypassCloseAnimation = false
-        didCloseHandler?()
-        didCloseHandler = nil
-    }
-
     // MARK: - Window factory
 
     private static func makeWindow() -> NSWindow {
+        // Use NSPanel for menu-bar-agent mode so the window shows regardless of activation policy.
+        // In UITest mode (where .regular policy is forced), fall back to NSWindow for XCUITest
+        // accessibility compatibility.
+        if AppMetadata.isMenuBarAgent() && !AppMetadata.isUITestMode() {
+            return makePanel()
+        }
+        return makePlainWindow()
+    }
+
+    private static func makePanel() -> NSPanel {
+        let panel = NSPanel(
+            contentRect: NSRect(x: 0, y: 0, width: 760, height: 900),
+            styleMask: [
+                .titled,
+                .closable,
+                .resizable,
+                .fullSizeContentView,
+            ],
+            backing: .buffered,
+            defer: false
+        )
+        panel.tabbingMode = .disallowed
+        panel.tabbingIdentifier = "MarkdownPreview"
+        panel.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
+        panel.isMovableByWindowBackground = false
+        panel.center()
+        return panel
+    }
+
+    private static func makePlainWindow() -> NSWindow {
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 760, height: 900),
             styleMask: [

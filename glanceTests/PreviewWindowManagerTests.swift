@@ -34,22 +34,15 @@ struct PreviewWindowManagerTests {
         await waitUntil { manager.openWindowCount == 0 }
     }
 
-    @Test func previewWindowsUseRegularNSWindowInsteadOfPanel() throws {
+    @Test func previewWindowsUseNSPanel() throws {
         let manager = makeManager()
-        let singleURL = try makeMarkdownFile(named: "regular-window.md", contents: "# Single")
-        let leftURL = try makeMarkdownFile(named: "regular-left.md", contents: "# Left")
-        let rightURL = try makeMarkdownFile(named: "regular-right.md", contents: "# Right")
+        let singleURL = try makeMarkdownFile(named: "panel-window.md", contents: "# Single")
 
-        let singleController = manager.openPreview(for: singleURL)
-        let splitController = manager.openSplitPreview(leftURL: leftURL, rightURL: rightURL)
+        let controller = manager.openPreview(for: singleURL)
 
-        #expect(!(singleController.window is NSPanel))
-        #expect(!(splitController.window is NSPanel))
-        #expect(type(of: try #require(singleController.window)) == NSWindow.self)
-        #expect(type(of: try #require(splitController.window)) == NSWindow.self)
+        #expect(controller.window is NSPanel)
 
-        singleController.window?.close()
-        splitController.window?.close()
+        controller.window?.close()
     }
 
     @Test func openPreviewEagerlyLoadsPaneViewBeforeMarkdownLoad() throws {
@@ -60,38 +53,6 @@ struct PreviewWindowManagerTests {
 
         #expect(controller.isPreviewPaneViewLoaded)
         #expect(!controller.hasPendingPreviewLoad)
-
-        controller.window?.close()
-    }
-
-    @Test func openSplitPreviewLoadsBothFiles() async throws {
-        let manager = makeManager()
-        let firstURL = try makeMarkdownFile(named: "split-left.md", contents: "# Left")
-        let secondURL = try makeMarkdownFile(named: "split-right.md", contents: "# Right")
-
-        let controller = manager.openSplitPreview(leftURL: firstURL, rightURL: secondURL)
-
-        #expect(manager.openWindowCount == 1)
-        #expect(controller.loadedFileURLs == [firstURL, secondURL])
-        #expect(controller.window != nil)
-        #expect(controller.window?.title == "split-left.md + split-right.md")
-        #expect(controller.window?.isVisible == true)
-        #expect(controller.window?.alphaValue == 1)
-        assertPresented(controller.window)
-
-        controller.window?.close()
-        await waitUntil { manager.openWindowCount == 0 }
-    }
-
-    @Test func openSplitPreviewEagerlyLoadsBothPaneViewsBeforeMarkdownLoad() throws {
-        let manager = makeManager()
-        let firstURL = try makeMarkdownFile(named: "eager-left.md", contents: "# Left")
-        let secondURL = try makeMarkdownFile(named: "eager-right.md", contents: "# Right")
-
-        let controller = manager.openSplitPreview(leftURL: firstURL, rightURL: secondURL)
-
-        #expect(controller.arePreviewPaneViewsLoaded == [true, true])
-        #expect(controller.hasPendingPreviewLoads == [false, false])
 
         controller.window?.close()
     }

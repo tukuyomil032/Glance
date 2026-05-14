@@ -78,14 +78,6 @@ struct HTMLTemplateTests {
         #expect(html.contains("highlight.min.js"))
         #expect(html.contains("github-dark-dimmed.min.css"))
     }
-
-    @Test func liquidGlassModeUsesGlassShell() {
-        let html = HTMLTemplate.render(body: "<p>glass</p>", appearanceMode: .liquidGlass)
-        #expect(html.contains("backdrop-filter"))
-        #expect(html.contains("border-radius: 28px"))
-        #expect(html.contains("glass"))
-    }
-
 }
 
 struct AppMetadataTests {
@@ -128,21 +120,12 @@ struct AppMetadataTests {
 
     @Test func readsUITestPreviewPathsFromEnvironment() {
         let singlePath = "/tmp/glance-single.md"
-        let leftPath = "/tmp/glance-left.md"
-        let rightPath = "/tmp/glance-right.md"
 
         #expect(AppMetadata.uiTestPreviewURL(environment: [
             "GLANCE_UI_TEST_PREVIEW_PATH": " \(singlePath) ",
         ]) == URL(fileURLWithPath: singlePath))
-        #expect(AppMetadata.uiTestSplitPreviewURLs(environment: [
-            "GLANCE_UI_TEST_SPLIT_PREVIEW_LEFT_PATH": leftPath,
-            "GLANCE_UI_TEST_SPLIT_PREVIEW_RIGHT_PATH": rightPath,
-        ]) == [URL(fileURLWithPath: leftPath), URL(fileURLWithPath: rightPath)])
         #expect(AppMetadata.uiTestPreviewURL(environment: [
             "GLANCE_UI_TEST_PREVIEW_PATH": " ",
-        ]) == nil)
-        #expect(AppMetadata.uiTestSplitPreviewURLs(environment: [
-            "GLANCE_UI_TEST_SPLIT_PREVIEW_LEFT_PATH": leftPath,
         ]) == nil)
     }
 
@@ -172,94 +155,47 @@ struct AppMetadataTests {
 @MainActor
 struct AppDelegatePreviewActivationTests {
 
-    @Test func openPreviewPromotesMenuBarAgentBeforeOpeningWindow() async {
-        var appliedPolicies: [NSApplication.ActivationPolicy] = []
-        var activationCount = 0
+    @Test func openPreviewCallsOpenerDirectly() {
         var openedURL: URL?
         let url = URL(fileURLWithPath: "/tmp/preview.md")
 
         let delegate = AppDelegate(
             previewActivationController: PreviewWindowActivationController(
                 isMenuBarAgent: { true },
-                setActivationPolicy: { appliedPolicies.append($0) },
-                activate: { activationCount += 1 }
+                setActivationPolicy: { _ in }
             ),
-            previewOpener: { openedURL = $0 },
-            splitPreviewOpener: { _, _ in
-                Issue.record("Unexpected split preview open")
-            }
+            previewOpener: { openedURL = $0 }
         )
 
         delegate.openPreview(for: url)
-        await Task.yield()
-        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
 
-        #expect(appliedPolicies == [.regular])
-        #expect(activationCount == 1)
         #expect(openedURL == url)
     }
 
-    @Test func openSplitPreviewPromotesMenuBarAgentBeforeOpeningWindow() async {
+    @Test func openPreviewSkipsPolicyChangesForNSPanel() {
         var appliedPolicies: [NSApplication.ActivationPolicy] = []
-        var activationCount = 0
-        var openedURLs: [URL] = []
-        let leftURL = URL(fileURLWithPath: "/tmp/left.md")
-        let rightURL = URL(fileURLWithPath: "/tmp/right.md")
-
-        let delegate = AppDelegate(
-            previewActivationController: PreviewWindowActivationController(
-                isMenuBarAgent: { true },
-                setActivationPolicy: { appliedPolicies.append($0) },
-                activate: { activationCount += 1 }
-            ),
-            previewOpener: { _ in
-                Issue.record("Unexpected single preview open")
-            },
-            splitPreviewOpener: { left, right in
-                openedURLs = [left, right]
-            }
-        )
-
-        delegate.openSplitPreview(leftURL: leftURL, rightURL: rightURL)
-        await Task.yield()
-        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
-
-        #expect(appliedPolicies == [.regular])
-        #expect(activationCount == 1)
-        #expect(openedURLs == [leftURL, rightURL])
-    }
-
-    @Test func openPreviewSkipsPolicyPromotionForRegularApps() {
-        var appliedPolicies: [NSApplication.ActivationPolicy] = []
-        var activationCount = 0
         var openedURL: URL?
         let url = URL(fileURLWithPath: "/tmp/regular.md")
 
         let delegate = AppDelegate(
             previewActivationController: PreviewWindowActivationController(
-                isMenuBarAgent: { false },
-                setActivationPolicy: { appliedPolicies.append($0) },
-                activate: { activationCount += 1 }
+                isMenuBarAgent: { true },
+                setActivationPolicy: { appliedPolicies.append($0) }
             ),
-            previewOpener: { openedURL = $0 },
-            splitPreviewOpener: { _, _ in
-                Issue.record("Unexpected split preview open")
-            }
+            previewOpener: { openedURL = $0 }
         )
 
         delegate.openPreview(for: url)
 
         #expect(appliedPolicies.isEmpty)
-        #expect(activationCount == 0)
         #expect(openedURL == url)
     }
 
-    @Test func resignActiveReturnsAccessoryOnlyWhenNoPreviewControllersRemain() {
+    @Test func resignActiveReturnsAccessoryOnlyWhenNoWindowsRemain() {
         var appliedPolicies: [NSApplication.ActivationPolicy] = []
         let controller = PreviewWindowActivationController(
             isMenuBarAgent: { true },
-            setActivationPolicy: { appliedPolicies.append($0) },
-            activate: { }
+            setActivationPolicy: { appliedPolicies.append($0) }
         )
 
         controller.restoreAccessoryPolicyAfterResign(
@@ -270,18 +206,12 @@ struct AppDelegatePreviewActivationTests {
             hasVisibleWindows: true,
             hasOpenPreviewWindows: false
         )
-        controller.restoreAccessoryPolicyAfterResign(
-            hasVisibleWindows: false,
-            hasOpenPreviewWindows: false,
-            isPendingPresentation: true
-        )
 
         #expect(appliedPolicies.isEmpty)
 
         controller.restoreAccessoryPolicyAfterResign(
             hasVisibleWindows: false,
-            hasOpenPreviewWindows: false,
-            isPendingPresentation: false
+            hasOpenPreviewWindows: false
         )
 
         #expect(appliedPolicies == [.accessory])
@@ -291,27 +221,10 @@ struct AppDelegatePreviewActivationTests {
 struct PreviewPreferencesTests {
 
     @Test func defaultValues() {
-        let prefs = PreviewPreferences(fontSize: 16, maxWidth: 760, language: "system", appearanceMode: .standard)
+        let prefs = PreviewPreferences(fontSize: 16, maxWidth: 760, language: "system")
         #expect(prefs.fontSize == 16)
         #expect(prefs.maxWidth == 760)
         #expect(prefs.language == "system")
-        #expect(prefs.appearanceMode == .standard)
-    }
-
-    @Test func appearanceModeRoundTripsThroughDefaults() {
-        let suiteName = "com.tukuyomi032.glance.tests.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)
-        defaults?.removePersistentDomain(forName: suiteName)
-        defer { defaults?.removePersistentDomain(forName: suiteName) }
-
-        var prefs = PreviewPreferences.load(userDefaults: defaults)
-        #expect(prefs.appearanceMode == .standard)
-
-        prefs.appearanceMode = .liquidGlass
-        prefs.save(userDefaults: defaults)
-
-        let reloaded = PreviewPreferences.load(userDefaults: defaults)
-        #expect(reloaded.appearanceMode == .liquidGlass)
     }
 
     @Test func savePostsPreferenceChangeNotification() {
@@ -330,7 +243,7 @@ struct PreviewPreferencesTests {
         }
         defer { NotificationCenter.default.removeObserver(token) }
 
-        let prefs = PreviewPreferences(fontSize: 17, maxWidth: 780, language: "en", appearanceMode: .liquidGlass)
+        let prefs = PreviewPreferences(fontSize: 17, maxWidth: 780, language: "en")
         prefs.save(userDefaults: defaults)
 
         #expect(didNotify)

@@ -6,8 +6,6 @@ enum AppMetadata {
     static let menuBarAgentKey = "LSUIElement"
     static let uiTestModeEnvironmentKey = "GLANCE_UI_TEST_MODE"
     static let uiTestPreviewPathEnvironmentKey = "GLANCE_UI_TEST_PREVIEW_PATH"
-    static let uiTestSplitPreviewLeftPathEnvironmentKey = "GLANCE_UI_TEST_SPLIT_PREVIEW_LEFT_PATH"
-    static let uiTestSplitPreviewRightPathEnvironmentKey = "GLANCE_UI_TEST_SPLIT_PREVIEW_RIGHT_PATH"
 
     static func sparkleFeedURL(bundle: Bundle = .main) -> URL? {
         guard let value = bundle.object(forInfoDictionaryKey: sparkleFeedURLKey) as? String else {
@@ -59,21 +57,6 @@ enum AppMetadata {
 
     static func uiTestPreviewURL(environment: [String: String] = ProcessInfo.processInfo.environment) -> URL? {
         fileURL(forEnvironmentKey: uiTestPreviewPathEnvironmentKey, environment: environment)
-    }
-
-    static func uiTestSplitPreviewURLs(environment: [String: String] = ProcessInfo.processInfo.environment) -> [URL]? {
-        guard let leftURL = fileURL(
-            forEnvironmentKey: uiTestSplitPreviewLeftPathEnvironmentKey,
-            environment: environment
-        ),
-              let rightURL = fileURL(
-                forEnvironmentKey: uiTestSplitPreviewRightPathEnvironmentKey,
-                environment: environment
-              ) else {
-            return nil
-        }
-
-        return [leftURL, rightURL]
     }
 
     private static func fileURL(forEnvironmentKey key: String, environment: [String: String]) -> URL? {

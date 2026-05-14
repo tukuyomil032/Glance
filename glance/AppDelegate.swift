@@ -26,8 +26,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     private let previewWindowManager: PreviewWindowManager
     private let previewActivationController: PreviewWindowActivationController
     private let previewOpener: @MainActor (URL) -> Void
-    private let splitPreviewOpener: @MainActor (URL, URL) -> Void
-    private var isPendingPreviewPresentation = false
 
     override init() {
         let previewWindowManager = PreviewWindowManager()
@@ -36,34 +34,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         previewOpener = { url in
             previewWindowManager.openPreview(for: url)
         }
-        splitPreviewOpener = { leftURL, rightURL in
-            previewWindowManager.openSplitPreview(leftURL: leftURL, rightURL: rightURL)
-        }
         super.init()
     }
 
     init(
         previewActivationController: PreviewWindowActivationController,
-        previewOpener: @escaping @MainActor (URL) -> Void,
-        splitPreviewOpener: @escaping @MainActor (URL, URL) -> Void
+        previewOpener: @escaping @MainActor (URL) -> Void
     ) {
         self.previewWindowManager = PreviewWindowManager()
         self.previewActivationController = previewActivationController
         self.previewOpener = previewOpener
-        self.splitPreviewOpener = splitPreviewOpener
-        super.init()
-    }
-
-    init(
-        previewActivationController: PreviewWindowActivationController,
-        previewOpener: @escaping @MainActor (URL) -> Void,
-        splitPreviewOpener: @escaping @MainActor (URL, URL) -> Void,
-        previewWindowManager: PreviewWindowManager
-    ) {
-        self.previewWindowManager = previewWindowManager
-        self.previewActivationController = previewActivationController
-        self.previewOpener = previewOpener
-        self.splitPreviewOpener = splitPreviewOpener
         super.init()
     }
 
@@ -80,7 +60,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         hotKeyController.delegate = self
         NSApp.setActivationPolicy(AppMetadata.isMenuBarAgent() ? .accessory : .regular)
         NSWindow.allowsAutomaticWindowTabbing = true
-        LaunchSplashController.showIfNeeded()
         setupStatusItem()
         registerGlobalHotKey()
     }
@@ -94,8 +73,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         let hasVisibleWindows = NSApp.windows.contains { $0.isVisible }
         previewActivationController.restoreAccessoryPolicyAfterResign(
             hasVisibleWindows: hasVisibleWindows,
-            hasOpenPreviewWindows: previewWindowManager.hasOpenPreviewWindows,
-            isPendingPresentation: isPendingPreviewPresentation
+            hasOpenPreviewWindows: previewWindowManager.hasOpenPreviewWindows
         )
     }
 
@@ -116,27 +94,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         }
     }
 
-    func openSplitMarkdownFiles() {
-        openPanelCoordinator.openSplitMarkdownFiles { [weak self] urls in
-            guard urls.count == 2 else { return }
-            self?.openSplitPreview(leftURL: urls[0], rightURL: urls[1])
-        }
-    }
-
     func openPreview(for url: URL) {
-        isPendingPreviewPresentation = true
-        previewActivationController.prepareForPreviewPresentation { [weak self] in
-            self?.previewOpener(url)
-            self?.isPendingPreviewPresentation = false
-        }
-    }
-
-    func openSplitPreview(leftURL: URL, rightURL: URL) {
-        isPendingPreviewPresentation = true
-        previewActivationController.prepareForPreviewPresentation { [weak self] in
-            self?.splitPreviewOpener(leftURL, rightURL)
-            self?.isPendingPreviewPresentation = false
-        }
+        previewOpener(url)
     }
 
     // MARK: - Status item setup
@@ -168,14 +127,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         )
         openItem.target = self
         menu.addItem(openItem)
-
-        let splitItem = NSMenuItem(
-            title: "Open in Split View…",
-            action: #selector(openSplitMarkdownFilesFromMenu),
-            keyEquivalent: ""
-        )
-        splitItem.target = self
-        menu.addItem(splitItem)
 
         let settingsItem = NSMenuItem(
             title: "Settings…",
@@ -209,10 +160,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         return menu
     }
 
-    private func refreshStatusMenu() {
-        statusItem?.menu = buildStatusMenu()
-    }
-
     private func showUITestHostWindow() {
         guard uiTestHostWindow == nil else {
             uiTestHostWindow?.makeKeyAndOrderFront(nil)
@@ -237,10 +184,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     }
 
     private func launchUITestMode() {
-        if let urls = AppMetadata.uiTestSplitPreviewURLs() {
-            openSplitPreview(leftURL: urls[0], rightURL: urls[1])
-            return
-        }
+        NSRunningApplication.current.activate()
 
         if let url = AppMetadata.uiTestPreviewURL() {
             openPreview(for: url)
@@ -254,10 +198,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
 
     @objc private func openMarkdownFileFromMenu() {
         openMarkdownFile()
-    }
-
-    @objc private func openSplitMarkdownFilesFromMenu() {
-        openSplitMarkdownFiles()
     }
 
     @objc func openSettings() {

@@ -4,7 +4,6 @@ import UniformTypeIdentifiers
 @MainActor
 protocol MarkdownOpenPanelPresenting: AnyObject {
     var url: URL? { get }
-    var urls: [URL] { get }
     func orderFrontRegardless()
     func begin(_ handler: @escaping (NSApplication.ModalResponse) -> Void)
 }
@@ -19,8 +18,6 @@ final class NSOpenPanelAdapter: MarkdownOpenPanelPresenting {
 
     var url: URL? { panel.url }
 
-    var urls: [URL] { panel.urls }
-
     func orderFrontRegardless() {
         panel.orderFrontRegardless()
     }
@@ -33,42 +30,16 @@ final class NSOpenPanelAdapter: MarkdownOpenPanelPresenting {
 @MainActor
 final class MarkdownOpenPanelCoordinator {
     private var activePanel: MarkdownOpenPanelPresenting?
-    private let panelFactory: @MainActor @Sendable (Bool) -> MarkdownOpenPanelPresenting
-    private let beforePresent: @MainActor @Sendable (@escaping @MainActor () -> Void) -> Void
-    private let invalidSplitSelectionHandler: @MainActor @Sendable () -> Void
+    private let panelFactory: @MainActor () -> MarkdownOpenPanelPresenting
     private var isPresentingPanel = false
 
     init(
-        panelFactory: @escaping @MainActor @Sendable (Bool) -> MarkdownOpenPanelPresenting = MarkdownOpenPanelCoordinator.defaultPanelFactory,
-        beforePresent: @escaping @MainActor @Sendable (@escaping @MainActor () -> Void) -> Void = LaunchSplashController.performAfterDismissIfNeeded,
-        invalidSplitSelectionHandler: @escaping @MainActor @Sendable () -> Void = MarkdownOpenPanelCoordinator.defaultInvalidSplitSelectionHandler
+        panelFactory: @escaping @MainActor () -> MarkdownOpenPanelPresenting = MarkdownOpenPanelCoordinator.makeDefaultPanel
     ) {
         self.panelFactory = panelFactory
-        self.beforePresent = beforePresent
-        self.invalidSplitSelectionHandler = invalidSplitSelectionHandler
     }
 
     func openMarkdownFile(onSelect: @escaping (URL) -> Void) {
-        openMarkdownFiles(allowsMultipleSelection: false) { urls in
-            guard let url = urls.first else { return }
-            onSelect(url)
-        }
-    }
-
-    func openSplitMarkdownFiles(onSelect: @escaping ([URL]) -> Void) {
-        openMarkdownFiles(allowsMultipleSelection: true) { urls in
-            guard urls.count == 2 else {
-                self.invalidSplitSelectionHandler()
-                return
-            }
-            onSelect(urls)
-        }
-    }
-
-    private func openMarkdownFiles(
-        allowsMultipleSelection: Bool,
-        onSelect: @escaping ([URL]) -> Void
-    ) {
         if let activePanel {
             NSRunningApplication.current.activate()
             activePanel.orderFrontRegardless()
@@ -78,16 +49,7 @@ final class MarkdownOpenPanelCoordinator {
         guard !isPresentingPanel else { return }
         isPresentingPanel = true
 
-        beforePresent { [weak self] in
-            self?.presentPanel(allowsMultipleSelection: allowsMultipleSelection, onSelect: onSelect)
-        }
-    }
-
-    private func presentPanel(
-        allowsMultipleSelection: Bool,
-        onSelect: @escaping ([URL]) -> Void
-    ) {
-        let panel = panelFactory(allowsMultipleSelection)
+        let panel = panelFactory()
         activePanel = panel
         isPresentingPanel = false
 
@@ -97,35 +59,22 @@ final class MarkdownOpenPanelCoordinator {
             guard let self else { return }
             defer { self.activePanel = nil }
             guard response == .OK, let url = panel?.url else { return }
-            let urls = panel?.urls ?? [url]
-            onSelect(urls)
+            onSelect(url)
         }
     }
 
-    private static func defaultInvalidSplitSelectionHandler() {
-        let alert = NSAlert()
-        alert.alertStyle = .warning
-        alert.messageText = String(localized: "Select exactly two Markdown files")
-        alert.informativeText = String(localized: "Split View requires exactly two Markdown files.")
-        alert.runModal()
-    }
-
-    private static func defaultPanelFactory(allowsMultipleSelection: Bool) -> MarkdownOpenPanelPresenting {
+    @MainActor
+    private static func makeDefaultPanel() -> MarkdownOpenPanelPresenting {
         let panel = NSOpenPanel()
-        if allowsMultipleSelection {
-            panel.title = String(localized: "Open Markdown Files for Split View")
-            panel.message = String(localized: "Select exactly two Markdown files to preview side by side")
-        } else {
-            panel.title = String(localized: "Open Markdown File")
-            panel.message = String(localized: "Select a Markdown file to preview")
-        }
+        panel.title = String(localized: "Open Markdown File")
+        panel.message = String(localized: "Select a Markdown file to preview")
         panel.allowedContentTypes = [
             .init(filenameExtension: "md") ?? .plainText,
             .init(filenameExtension: "markdown") ?? .plainText,
             .init(filenameExtension: "mdown") ?? .plainText,
             .init(filenameExtension: "mkd") ?? .plainText,
         ]
-        panel.allowsMultipleSelection = allowsMultipleSelection
+        panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
         return NSOpenPanelAdapter(panel: panel)
     }

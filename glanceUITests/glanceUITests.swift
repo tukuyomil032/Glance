@@ -56,30 +56,6 @@ final class glanceUITests: XCTestCase {
         assertPresentedCGWindow(matchingWindow)
     }
 
-    @MainActor
-    func testUITestModeCanOpenVisibleSplitPreviewWindow() throws {
-        let leftURL = try makeMarkdownFixture(named: "ui-left.md", contents: "# Left")
-        let rightURL = try makeMarkdownFixture(named: "ui-right.md", contents: "# Right")
-        let expectedTitle = "ui-left.md + ui-right.md"
-        let app = XCUIApplication()
-        app.launchEnvironment["GLANCE_UI_TEST_MODE"] = "1"
-        app.launchEnvironment["GLANCE_UI_TEST_SPLIT_PREVIEW_LEFT_PATH"] = leftURL.path
-        app.launchEnvironment["GLANCE_UI_TEST_SPLIT_PREVIEW_RIGHT_PATH"] = rightURL.path
-        app.launch()
-        addTeardownBlock { app.terminate() }
-
-        let previewWindow = app.windows[expectedTitle]
-        XCTAssertTrue(previewWindow.waitForExistence(timeout: 5))
-
-        let ownerPIDs = runningApplicationPIDs(bundleIdentifier: appBundleIdentifier)
-        let matchingWindow = try waitForPresentedCGWindow(
-            named: expectedTitle,
-            matching: previewWindow.frame,
-            ownerPIDs: ownerPIDs
-        )
-        assertPresentedCGWindow(matchingWindow)
-    }
-
     private func makeMarkdownFixture(named name: String, contents: String) throws -> URL {
         let rootURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
